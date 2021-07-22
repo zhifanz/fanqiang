@@ -3,13 +3,16 @@ import {
   IpAddressType,
 } from "@aws-sdk/client-lightsail";
 import { AwsLightsailTemplate } from "./AwsLightsailTemplate";
+import { ProxyConfig } from "../domain/ProxyConfig";
+import { randomBytes } from "crypto";
 
 type ValueRequired<T> = { [P in keyof T]-?: NonNullable<T[P]> };
 
 export type AwsLightsailProxyConfig = Pick<
   ValueRequired<CreateInstancesCommandInput>,
   "availabilityZone" | "blueprintId" | "bundleId" | "ipAddressType"
-> & { instanceName: string; port: number; encryptionAlgorithm: string };
+> &
+  ProxyConfig & { instanceName: string };
 
 export const DEFAULT_INSTANCE_NAME = "fanqiang-proxy-1";
 
@@ -24,6 +27,7 @@ export async function defaultConfig(
     instanceName: DEFAULT_INSTANCE_NAME,
     port: 8388,
     encryptionAlgorithm: "aes-256-gcm",
+    password: generatePassword(),
   };
 }
 
@@ -48,4 +52,8 @@ async function defaultBundle(template: AwsLightsailTemplate): Promise<string> {
     return bundles[0] as string;
   }
   throw new Error("No available bundle!");
+}
+
+function generatePassword(): string {
+  return randomBytes(20).toString("base64");
 }

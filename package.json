@@ -60,6 +60,7 @@
     "@aws-sdk/client-lightsail": "^3.21.0",
     "fs-extra": "^10.0.0",
     "tslib": "^2.3.0",
+    "yaml": "^1.10.2",
     "yargs": "^17.0.1"
   }
 }

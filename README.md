@@ -28,6 +28,8 @@ Commands:
 Options:
   --region   AWS lightsail region for proxy deployment
                                                  [string] [default: "us-east-1"]
+  --output   Path for clash config file, only applicable for create command
+                             [string] [default: "~/.config/clash/fanqiang.yaml"]
   --help     Show help                                                 [boolean]
   --version  Show version number                                       [boolean]
 ```

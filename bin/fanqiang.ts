@@ -3,6 +3,8 @@
 import yargs from "yargs";
 import { TunnelProxyFacade } from "../lib/core/TunnelProxyFacade";
 import { DEFAULT_REGION } from "../lib/core/awsRegions";
+import { DEFAULT_CONFIG_PATH } from "../lib/core/clash";
+
 async function main(): Promise<void> {
   const facade = new TunnelProxyFacade();
 
@@ -13,6 +15,12 @@ async function main(): Promise<void> {
         type: "string",
         default: DEFAULT_REGION,
         description: "AWS lightsail region for proxy deployment",
+      },
+      output: {
+        type: "string",
+        default: DEFAULT_CONFIG_PATH,
+        description:
+          "Path for clash config file, only applicable for create command",
       },
     })
     .demandCommand(1)
@@ -25,18 +33,17 @@ async function main(): Promise<void> {
         console.log(
           `Creating proxy infrastructures for region [${args.region}]...`
         );
-        const proxyInfo = await facade.createTunnelProxy(args.region);
+        await facade.createTunnelProxy(args.region, args.output);
         console.log("Successfully deploy proxy, connect information ->");
-        console.log(proxyInfo);
       }
     )
     .command(
       "destroy",
       "Destroy tunnel proxy infrastructures",
       () => void 0,
-      (args) => {
+      async (args) => {
         console.log("Destroying tunnel proxy infrastructures...");
-        facade.destroyTunnelProxy(args.region);
+        await facade.destroyTunnelProxy(args.region);
         console.log("Successfully destroy tunnel proxy!");
       }
     )

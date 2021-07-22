@@ -1,6 +1,6 @@
-export interface TunnelProxyEndpoints {
-  instanceName: string;
+import { ProxyConfig } from "./ProxyConfig";
+
+export interface TunnelProxyEndpoints extends ProxyConfig {
   ipv4: string;
   ipv6: string;
-  port: number;
 }

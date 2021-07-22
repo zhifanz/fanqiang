@@ -6,12 +6,17 @@ import { TunnelProxyEndpoints } from "../domain/TunnelProxyEndpoints";
 import { AwsLightsailTemplate } from "./AwsLightsailTemplate";
 
 export class AwsLightsailProxyDeployer implements Deployer {
-  async apply(region: string, password: string): Promise<TunnelProxyEndpoints> {
+  async apply(region: string): Promise<TunnelProxyEndpoints> {
     const client = new LightsailClient({ region });
     const template = new AwsLightsailTemplate(client);
     try {
-      const { port, instanceName, encryptionAlgorithm, ...instanceConfig } =
-        await defaultConfig(template);
+      const {
+        port,
+        instanceName,
+        encryptionAlgorithm,
+        password,
+        ...instanceConfig
+      } = await defaultConfig(template);
       await template.createInstance({
         ...instanceConfig,
         instanceNames: [instanceName],
@@ -38,7 +43,8 @@ export class AwsLightsailProxyDeployer implements Deployer {
         ipv4: instance.publicIpAddress as string,
         ipv6: (instance.ipv6Addresses as string[])[0],
         port,
-        instanceName,
+        encryptionAlgorithm,
+        password,
       };
     } finally {
       client.destroy();
