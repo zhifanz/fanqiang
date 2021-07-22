@@ -8,7 +8,9 @@
     "lint": "eslint --ext .ts . && prettier -c .",
     "lint:fix": "eslint --ext .ts --fix . && prettier --write .",
     "test": "mocha --timeout 10000 --require espower-typescript/guess \"test/**/*.ts\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "build": "tsc",
+    "prepublish": "run-s clean build"
   },
   "repository": {
     "type": "git",
@@ -29,6 +31,8 @@
   "devDependencies": {
     "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^12.1.4",
+    "@semantic-release/changelog": "^5.0.1",
+    "@semantic-release/git": "^9.0.0",
     "@types/fs-extra": "^9.0.12",
     "@types/mocha": "^8.2.3",
     "@types/node": "^14.14.31",
