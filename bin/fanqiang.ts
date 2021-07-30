@@ -34,7 +34,7 @@ async function main(): Promise<void> {
           `Creating proxy infrastructures for region [${args.region}]...`
         );
         await facade.createTunnelProxy(args.region, args.output);
-        console.log("Successfully deploy proxy, connect information ->");
+        console.log("Successfully deploy proxy, saved client config to " + args.output);
       }
     )
     .command(
