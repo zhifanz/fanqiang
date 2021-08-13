@@ -203,7 +203,6 @@ export class AliyunOperations {
         "SystemDisk.Category": instanceConfig.systemDiskCategory,
         InstanceChargeType: instanceConfig.instanceChargeType,
         UserData: Buffer.from(cloudInitScript).toString("base64"),
-        KeyPairName: "id_ed25519",
         ResourceGroupId: resourceGroupId,
       })
     ).InstanceId;
