@@ -1,8 +1,8 @@
 import { LightsailClient } from "@aws-sdk/client-lightsail";
-import { defaultConfig } from "../../lib/core/AwsLightsailProxyConfig";
+import { defaultConfig } from "../../../lib/core/aws/AwsLightsailProxyConfig";
 import assert from "assert";
-import { AwsLightsailTemplate } from "../../lib/core/AwsLightsailTemplate";
-import { DEFAULT_REGION } from "../../lib/core/awsRegions";
+import { AwsLightsailTemplate } from "../../../lib/core/aws/AwsLightsailTemplate";
+import { DEFAULT_REGION } from "../../../lib/core/aws/regions";
 
 describe("AwsLightsailDefaultValueProvider", () => {
   const client = new LightsailClient({ region: DEFAULT_REGION });

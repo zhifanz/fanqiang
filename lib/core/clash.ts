@@ -3,12 +3,7 @@ import yaml from "yaml";
 import * as os from "os";
 import path from "path";
 
-export const DEFAULT_CONFIG_PATH = path.join(
-  os.homedir(),
-  ".config",
-  "clash",
-  "fanqiang.yaml"
-);
+export const DEFAULT_CONFIG_PATH = path.join(os.homedir(), ".config", "clash", "fanqiang.yaml");
 
 export function generateConfigFrom(endpoints: TunnelProxyEndpoints): string {
   return yaml.stringify({

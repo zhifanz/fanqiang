@@ -28,6 +28,8 @@ Commands:
 Options:
   --region   AWS lightsail region for proxy deployment
                                                  [string] [default: "us-east-1"]
+  --tunnelRegion  Aliyun region for tunnel deployment, for example: cn-shanghai
+                                                                        [string]
   --output   Path for clash config file, only applicable for create command
                              [string] [default: "~/.config/clash/fanqiang.yaml"]
   --help     Show help                                                 [boolean]
@@ -53,3 +55,18 @@ aws_secret_access_key = <YOUR_SECRET_ACCESS_KEY>
 Refer to [AWS SDK documentation][3] for more details on how to set up an AWS credentials file.
 
 [3]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/loading-node-credentials-shared.html
+
+## Setup Credentials for Aliyun Services
+
+You need to configure an Aliyun RAM user on a local machine if you want to use --tunnelRegion option. So far, this tool
+supports reading credentials from <code>$HOME/.aliyun/credentials</code>:
+
+- The credentials file on Linux, Unix, and macOS: ~/.aliyun/credentials
+- The credentials file on Windows: C:\Users\USER_NAME\.aliyun\credentials
+
+An example of credentials file:
+
+```
+accessKeyId=<YOUR_ACCESS_KEY_ID>
+accessKeySecret=<YOUR_SECRET_ACCESS_KEY>
+```

@@ -1,9 +1,6 @@
-import {
-  CreateInstancesCommandInput,
-  IpAddressType,
-} from "@aws-sdk/client-lightsail";
+import { CreateInstancesCommandInput, IpAddressType } from "@aws-sdk/client-lightsail";
 import { AwsLightsailTemplate } from "./AwsLightsailTemplate";
-import { ProxyConfig } from "../domain/ProxyConfig";
+import { ProxyConfig } from "../../domain/ProxyConfig";
 import { randomBytes } from "crypto";
 
 type ValueRequired<T> = { [P in keyof T]-?: NonNullable<T[P]> };
@@ -16,9 +13,7 @@ export type AwsLightsailProxyConfig = Pick<
 
 export const DEFAULT_INSTANCE_NAME = "fanqiang-proxy-1";
 
-export async function defaultConfig(
-  template: AwsLightsailTemplate
-): Promise<AwsLightsailProxyConfig> {
+export async function defaultConfig(template: AwsLightsailTemplate): Promise<AwsLightsailProxyConfig> {
   return {
     availabilityZone: await defaultZone(template),
     blueprintId: "amazon_linux_2",
