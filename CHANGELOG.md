@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/zhifanz/fanqiang/compare/v1.2.1...v1.2.2) (2021-08-14)
+
+
+### Bug Fixes
+
+* use correct api name for create resource group operation ([06db786](https://github.com/zhifanz/fanqiang/commit/06db786035ca9c11bde4a331c73e5d35d934cef7))
+
 ## [1.2.1](https://github.com/zhifanz/fanqiang/compare/v1.2.0...v1.2.1) (2021-08-13)
 
 
