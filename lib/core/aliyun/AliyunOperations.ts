@@ -43,7 +43,7 @@ export class AliyunOperations {
             throw new Error(`Resource group ${resourceGroupName} is under invalid status: ${resourceGroup.Status}`);
         }
       }
-      await this.doAction(Services.RESOURCE_MANAGER, "resourceGroupName", {
+      await this.doAction(Services.RESOURCE_MANAGER, "CreateResourceGroup", {
         Name: resourceGroupName,
         DisplayName: "RG-" + resourceGroupName,
       });
