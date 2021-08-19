@@ -1,3 +1,18 @@
+export async function promiseAllSync<T, R>(values: T[], handler: (value: T) => Promise<R>): Promise<R[]> {
+  const result: R[] = new Array(values.length);
+  for (const v of values) {
+    result.push(await handler(v));
+  }
+  return result;
+}
+
+export function singletonResult<T>(result: T[]): T {
+  if (result.length !== 1) {
+    throw new Error("Not singleton, actual length: " + result.length);
+  }
+  return result[0];
+}
+
 export function nonNullArray<T>(array: T[] | undefined): T[] {
   return array && array.length ? array : [];
 }

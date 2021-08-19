@@ -3,264 +3,316 @@ import { AliyunCredentials } from "./credentials";
 import OpenApiUtil from "@alicloud/openapi-util";
 import Util from "@alicloud/tea-util";
 import { findPagedResources } from "../cloudServiceOperations";
-import { waitCondition } from "../langUtils";
-import { InstanceConfig } from "./InstanceConfig";
 
 type Response = { RequestId: string; Code?: string; Message?: string };
 type PagedResponse = { TotalCount: number; PageSize: number; PageNumber: number } & Response;
 
-type ServiceRef = { name: string; version: string };
-export const Services: Record<"ECS" | "VPC" | "RESOURCE_MANAGER", ServiceRef> = {
-  ECS: { name: "ecs", version: "2014-05-26" },
-  VPC: { name: "vpc", version: "2016-04-28" },
-  RESOURCE_MANAGER: { name: "resourcemanager", version: "2020-03-31" },
-} as const;
+export type ParameterType = Record<string, string>;
+export type ResourceGroup = { Status: string; Name: string; Id: string };
+export type Vpc = { VpcId: string; CidrBlock: string; Status?: string };
+export type VSwitch = { VSwitchId: string; Status?: string };
+export type Zone = { AvailableInstanceTypes: { InstanceTypes: string[] }; ZoneId: string };
+export type Instance = { InstanceId: string; Status?: string };
+export type SecurityGroup = { SecurityGroupId: string };
+export type Eip = { EipAddress: string; AllocationId: string };
+export type Execution = { ExecutionId: string; Status: string };
+export type AutoProvisioningGroup = { AutoProvisioningGroupId: string };
+export type Policy = { PolicyName: string; PolicyType: string };
+export type RamRole = { RoleName: string };
 
 export class AliyunOperations {
   constructor(private readonly http: AxiosInstance, private readonly credentials: AliyunCredentials) {}
 
-  async ensureResourceGroup(resourceGroupName: string): Promise<string> {
-    let resourceGroupId: string | undefined;
-    await waitCondition(async () => {
-      const resourceGroups: { Id: string; Name: string; Status: string }[] = await this.findPagedResources(
-        Services.RESOURCE_MANAGER,
-        "ListResourceGroups",
-        (response) => {
-          return response.ResourceGroups.ResourceGroup;
-        }
-      );
-      const resourceGroup = resourceGroups.find((g) => g.Name === resourceGroupName);
-      if (resourceGroup) {
-        switch (resourceGroup.Status) {
-          case "Creating":
-            return false;
-          case "OK":
-            resourceGroupId = resourceGroup.Id;
-            return true;
-          case "Deleting":
-          case "PendingDelete":
-          default:
-            throw new Error(`Resource group ${resourceGroupName} is under invalid status: ${resourceGroup.Status}`);
-        }
-      }
-      await this.doAction(Services.RESOURCE_MANAGER, "CreateResourceGroup", {
-        Name: resourceGroupName,
-        DisplayName: "RG-" + resourceGroupName,
-      });
-      return false;
-    });
-    return <string>resourceGroupId;
+  describeSecurityGroups(RegionId: string, params: ParameterType = {}): Promise<SecurityGroup[]> {
+    return this.findPagedResources(
+      this.callEcs,
+      "DescribeSecurityGroups",
+      (r: any) => r.SecurityGroups?.SecurityGroup,
+      { RegionId, ...params }
+    );
   }
 
-  async findResourceGroup(resourceGroupName: string): Promise<string | undefined> {
-    const resourceGroups: { Name: string; Id: string }[] = await this.findPagedResources(
-      Services.RESOURCE_MANAGER,
+  createSecurityGroup(RegionId: string, params: ParameterType = {}): Promise<SecurityGroup> {
+    return this.callEcs("CreateSecurityGroup", { RegionId, ...params });
+  }
+
+  async authorizeSecurityGroup(
+    IpProtocol: string,
+    PortRange: string,
+    RegionId: string,
+    SecurityGroupId: string,
+    params: ParameterType = {}
+  ): Promise<void> {
+    await this.callEcs("AuthorizeSecurityGroup", { IpProtocol, PortRange, RegionId, SecurityGroupId, ...params });
+  }
+
+  async deleteSecurityGroup(RegionId: string, SecurityGroupId: string): Promise<void> {
+    await this.callEcs("DeleteSecurityGroup", { RegionId, SecurityGroupId });
+  }
+
+  async allocatePublicIpAddress(InstanceId: string, params: ParameterType = {}): Promise<string> {
+    return (await this.callEcs("AllocatePublicIpAddress", { InstanceId, ...params })).IpAddress;
+  }
+
+  describeInstances(RegionId: string, params: ParameterType = {}): Promise<Instance[]> {
+    return findPagedResources(
+      (p?: { PageNumber: number; NextToken?: string }) => {
+        const mergedParams: ParameterType = { RegionId, ...params };
+        if (p) {
+          mergedParams.PageNumber = p.PageNumber.toString();
+        }
+        if (p?.NextToken) {
+          mergedParams.NextToken = p.NextToken;
+        }
+        return this.callEcs("DescribeInstances", mergedParams);
+      },
+      (p, r) => ({ PageNumber: r.PageNumber + 1, NextToken: r.NextToken }),
+      (r: any) => r.PageNumber * r.PageSize < r.TotalCount,
+      (r: any) => r.Instances.Instance,
+      { PageNumber: 1 }
+    );
+  }
+
+  async describeInstanceStatus(
+    RegionId: string,
+    InstanceIdN: string[],
+    params: ParameterType = {}
+  ): Promise<Required<Instance>[]> {
+    return this.findPagedResources(
+      this.callEcs,
+      "DescribeInstanceStatus",
+      (r: any) => r.InstanceStatuses?.InstanceStatus,
+      { RegionId, ...flatten("InstanceId", InstanceIdN), ...params }
+    );
+  }
+
+  async createInstance(InstanceType: string, RegionId: string, params: ParameterType = {}): Promise<Instance> {
+    return this.callEcs("CreateInstance", { InstanceType, RegionId, ...params });
+  }
+
+  async createAutoProvisioningGroup(
+    RegionId: string,
+    TotalTargetCapacity: string,
+    params: ParameterType = {}
+  ): Promise<void> {
+    await this.callEcs("CreateAutoProvisioningGroup", { RegionId, TotalTargetCapacity, ...params });
+  }
+
+  async startInstance(InstanceId: string, params: ParameterType = {}): Promise<void> {
+    await this.callEcs("StartInstance", { InstanceId, ...params });
+  }
+
+  async deleteInstance(InstanceId: string, params: ParameterType = {}): Promise<void> {
+    await this.callEcs("DeleteInstance", { InstanceId, ...params });
+  }
+
+  async deleteInstances(InstanceIdN: string[], RegionId: string, params: ParameterType = {}): Promise<void> {
+    if (!InstanceIdN.length) {
+      return;
+    }
+    await this.callEcs("DeleteInstances", { RegionId, ...flatten("InstanceId", InstanceIdN), ...params });
+  }
+
+  async describeAutoProvisioningGroups(RegionId: string, params: ParameterType = {}): Promise<AutoProvisioningGroup[]> {
+    return this.findPagedResources(
+      this.callEcs,
+      "DescribeAutoProvisioningGroups",
+      (r: any) => r.AutoProvisioningGroups.AutoProvisioningGroup,
+      { RegionId, ...params }
+    );
+  }
+
+  async deleteAutoProvisioningGroup(
+    AutoProvisioningGroupId: string,
+    RegionId: string,
+    TerminateInstances: boolean
+  ): Promise<void> {
+    await this.callEcs("DeleteAutoProvisioningGroup", {
+      AutoProvisioningGroupId,
+      RegionId,
+      TerminateInstances: TerminateInstances.toString(),
+    });
+  }
+
+  async describeZones(RegionId: string, params: ParameterType = {}): Promise<Zone[]> {
+    return (await this.callEcs("DescribeZones", { RegionId, ...params })).Zones.Zone;
+  }
+
+  private callEcs(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "ecs", version: "2014-05-26" }, action, params);
+  }
+
+  describeVpcAttribute(RegionId: string, VpcId: string, params: ParameterType = {}): Promise<Vpc> {
+    return this.callVpc("DescribeVpcAttribute", { RegionId, VpcId, ...params });
+  }
+
+  describeVpcs(RegionId: string, params: ParameterType = {}): Promise<Vpc[]> {
+    return this.findPagedResources(this.callVpc, "DescribeVpcs", (r: any) => r.Vpcs.Vpc, { RegionId, ...params });
+  }
+
+  async createVpc(RegionId: string, params: ParameterType = {}): Promise<Vpc> {
+    let cidrBlock = params.CidrBlock;
+    if (!cidrBlock) {
+      cidrBlock = "172.16.0.0/12";
+      params.CidrBlock = cidrBlock;
+    }
+    const callResult = await this.callVpc("CreateVpc", { RegionId, ...params });
+    return {
+      CidrBlock: cidrBlock,
+      ...callResult,
+    };
+  }
+
+  deleteVpc(VpcId: string, RegionId: string): Promise<void> {
+    return this.callVpc("DeleteVpc", { VpcId, RegionId });
+  }
+
+  describeVSwitchAttributes(RegionId: string, VSwitchId: string): Promise<VSwitch> {
+    return this.callVpc("DescribeVSwitchAttributes", { RegionId, VSwitchId });
+  }
+
+  describeVSwitches(RegionId: string, params: ParameterType = {}): Promise<VSwitch[]> {
+    return this.findPagedResources(this.callVpc, "DescribeVSwitches", (r: any) => r.VSwitches.VSwitch, {
+      RegionId,
+      ...params,
+    });
+  }
+
+  createVSwitch(
+    CidrBlock: string,
+    VpcId: string,
+    ZoneId: string,
+    RegionId: string,
+    params: ParameterType = {}
+  ): Promise<VSwitch> {
+    return this.callVpc("CreateVSwitch", { CidrBlock, VpcId, ZoneId, RegionId, ...params });
+  }
+
+  deleteVSwitch(RegionId: string, VSwitchId: string): Promise<void> {
+    return this.callVpc("DeleteVSwitch", { RegionId, VSwitchId });
+  }
+
+  describeEipAddresses(RegionId: string, params: ParameterType = {}): Promise<Eip[]> {
+    return this.findPagedResources(this.callVpc, "DescribeEipAddresses", (r: any) => r.EipAddresses.EipAddress, {
+      RegionId,
+      ...params,
+    });
+  }
+
+  allocateEipAddress(RegionId: string, params: ParameterType = {}): Promise<Eip> {
+    return this.callVpc("AllocateEipAddress", { RegionId, ...params });
+  }
+
+  async releaseEipAddress(AllocationId: string, RegionId: string): Promise<void> {
+    await this.callVpc("ReleaseEipAddress", { AllocationId, RegionId });
+  }
+
+  private callVpc(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "vpc", version: "2016-04-28" }, action, params);
+  }
+
+  async createResourceGroup(Name: string, DisplayName: string): Promise<ResourceGroup> {
+    return (await this.callResourceManager("CreateResourceGroup", { Name, DisplayName })).ResourceGroup;
+  }
+
+  listResourceGroups(params: ParameterType = {}): Promise<ResourceGroup[]> {
+    return this.findPagedResources(
+      this.callResourceManager,
       "ListResourceGroups",
-      (response) => response.ResourceGroups.ResourceGroup
+      (r: any) => r.ResourceGroups?.ResourceGroup,
+      params
     );
-    return resourceGroups.find((g) => g.Name === resourceGroupName)?.Id;
   }
 
-  async createVpc(regionId: string, resourceGroupId: string): Promise<string> {
-    const vpcId = (
-      await this.doAction(Services.VPC, "CreateVpc", {
-        RegionId: regionId,
-        ResourceGroupId: resourceGroupId,
-        CidrBlock: "192.168.0.0/16",
-      })
-    ).VpcId;
-    await waitCondition(async () => {
-      return (
-        (
-          await this.doAction(Services.VPC, "DescribeVpcAttribute", {
-            RegionId: regionId,
-            VpcId: vpcId,
-          })
-        ).Status === "Available"
-      );
-    });
-    return vpcId;
+  private callResourceManager(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "resourcemanager", version: "2020-03-31" }, action, params);
   }
 
-  async deleteVpcs(regionId: string, resourceGroupId: string): Promise<void> {
-    const vpcs: any[] = await this.findPagedResources(Services.VPC, "DescribeVpcs", (r) => r.Vpcs.Vpc, {
-      RegionId: regionId,
-      ResourceGroupId: resourceGroupId,
-    });
+  async getRole(RoleName: string): Promise<RamRole> {
+    return (await this.callRam("GetRole", { RoleName })).Role;
+  }
 
-    for (const vpc of vpcs) {
-      await this.deleteResources(
-        () =>
-          this.findPagedResources(
-            Services.VPC,
-            "DescribeVSwitches",
-            (r): any[] => {
-              return r.VSwitches.VSwitch;
-            },
-            {
-              VpcId: vpc.VpcId,
-              RegionId: regionId,
-            }
-          ),
-        async (t) => {
-          if (t.Status === "Available") {
-            await this.doAction(Services.VPC, "DeleteVSwitch", { RegionId: regionId, VSwitchId: t.VSwitchId });
-          }
+  async createRole(RoleName: string, AssumeRolePolicyDocument: string, params: ParameterType = {}): Promise<void> {
+    await this.callRam("CreateRole", { RoleName, AssumeRolePolicyDocument, ...params });
+  }
+
+  async deleteRole(RoleName: string): Promise<void> {
+    await this.callRam("DeleteRole", { RoleName });
+  }
+
+  async listPoliciesForRole(RoleName: string): Promise<Policy[]> {
+    return (await this.callRam("ListPoliciesForRole", { RoleName })).Policies.Policy;
+  }
+
+  async attachPolicyToRole(PolicyName: string, PolicyType: string, RoleName: string): Promise<void> {
+    await this.callRam("AttachPolicyToRole", { PolicyName, PolicyType, RoleName });
+  }
+
+  async detachPolicyFromRole(PolicyName: string, PolicyType: string, RoleName: string): Promise<void> {
+    await this.callRam("DetachPolicyFromRole", { PolicyName, PolicyType, RoleName });
+  }
+
+  private callRam(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "ram", version: "2015-05-01" }, action, params);
+  }
+
+  listExecutions(RegionId: string, params: ParameterType = {}): Promise<Execution[]> {
+    return findPagedResources(
+      (NextToken?: string) => {
+        const mappedParams: ParameterType = { RegionId, ...params };
+        if (NextToken) {
+          mappedParams["NextToken"] = NextToken;
         }
-      );
-      await this.doAction(Services.VPC, "DeleteVpc", { RegionId: regionId, VpcId: vpc.VpcId });
-    }
-  }
-
-  async createVSwitch(regionId: string, vpcId: string, zoneId: string): Promise<string> {
-    const vSwitchId = (
-      await this.doAction(Services.VPC, "CreateVSwitch", {
-        CidrBlock: "192.168.0.0/24",
-        VpcId: vpcId,
-        ZoneId: zoneId,
-        RegionId: regionId,
-      })
-    ).VSwitchId;
-
-    await waitCondition(
-      async () =>
-        (
-          await this.doAction(Services.VPC, "DescribeVSwitchAttributes", { RegionId: regionId, VSwitchId: vSwitchId })
-        ).Status === "Available"
-    );
-
-    return vSwitchId;
-  }
-
-  async createSecurityGroup(
-    regionId: string,
-    resourceGroupId: string,
-    vpcId: string,
-    ingressPort: number
-  ): Promise<string> {
-    const securityGroupId = (
-      await this.doAction(Services.ECS, "CreateSecurityGroup", {
-        RegionId: regionId,
-        VpcId: vpcId,
-        ResourceGroupId: resourceGroupId,
-        SecurityGroupType: "normal",
-      })
-    ).SecurityGroupId;
-
-    const allowIngressPort = async (port: number, ipProtocol: "tcp" | "udp"): Promise<void> =>
-      await this.doAction(Services.ECS, "AuthorizeSecurityGroup", {
-        IpProtocol: ipProtocol,
-        PortRange: port + "/" + port,
-        RegionId: regionId,
-        SecurityGroupId: securityGroupId,
-        SourceCidrIp: "0.0.0.0/0",
-      });
-
-    await allowIngressPort(ingressPort, "tcp");
-    await allowIngressPort(ingressPort, "udp");
-    await allowIngressPort(22, "tcp");
-    return securityGroupId;
-  }
-
-  async deleteSecurityGroups(regionId: string, resourceGroupId: string): Promise<void> {
-    await this.deleteResources(
-      () =>
-        this.findPagedResources(
-          Services.ECS,
-          "DescribeSecurityGroups",
-          (r): { SecurityGroupId: string }[] => r.SecurityGroups.SecurityGroup,
-          {
-            RegionId: regionId,
-            ResourceGroupId: resourceGroupId,
-          }
-        ),
-      async (t) =>
-        await this.doAction(Services.ECS, "DeleteSecurityGroup", {
-          RegionId: regionId,
-          SecurityGroupId: t.SecurityGroupId,
-        })
+        return this.callOos("ListExecutions", mappedParams);
+      },
+      (p, r) => r.NextToken,
+      (r) => !!r.NextToken,
+      (r: any) => r.Executions
     );
   }
 
-  async createEcsInstance(
-    regionId: string,
-    resourceGroupId: string,
-    securityGroupId: string,
-    vSwitchId: string,
-    cloudInitScript: string,
-    instanceConfig: InstanceConfig
-  ): Promise<string> {
-    const instanceId = (
-      await this.doAction(Services.ECS, "CreateInstance", {
-        InstanceType: instanceConfig.instanceType,
-        RegionId: regionId,
-        ImageId: instanceConfig.imageId,
-        SecurityGroupId: securityGroupId,
-        VSwitchId: vSwitchId,
-        InternetChargeType: instanceConfig.internetChargeType,
-        InternetMaxBandwidthOut: instanceConfig.internetMaxBandwidthOut,
-        "SystemDisk.Size": instanceConfig.systemDiskSize,
-        "SystemDisk.Category": instanceConfig.systemDiskCategory,
-        InstanceChargeType: instanceConfig.instanceChargeType,
-        UserData: Buffer.from(cloudInitScript).toString("base64"),
-        ResourceGroupId: resourceGroupId,
-      })
-    ).InstanceId;
-    let ipAddress: string | undefined;
-    await waitCondition(async () => {
-      try {
-        ipAddress = (await this.doAction(Services.ECS, "AllocatePublicIpAddress", { InstanceId: instanceId }))
-          .IpAddress;
-        return true;
-      } catch (e) {
-        if (e.errorCode.includes("IncorrectInstanceStatus")) {
-          return false;
-        }
-        throw e;
-      }
-    });
-    await this.doAction(Services.ECS, "StartInstance", { InstanceId: instanceId });
-    await waitCondition(
-      async () =>
-        (
-          await this.doAction(Services.ECS, "DescribeInstanceStatus", {
-            RegionId: regionId,
-            "InstanceId.1": instanceId,
-          })
-        ).InstanceStatuses.InstanceStatus[0].Status === "Running"
-    );
-    return <string>ipAddress;
+  async getTemplate(TemplateName: string, RegionId: string, params: ParameterType = {}): Promise<any> {
+    return (await this.callOos("GetTemplate", { TemplateName, RegionId, ...params })).Template;
   }
 
-  async deleteEcsInstances(regionId: string, resourceGroupId: string): Promise<void> {
-    await this.deleteResources(
-      (): Promise<{ Status: string; InstanceId: string }[]> =>
-        this.findPagedResources(Services.ECS, "DescribeInstances", (r) => r.Instances.Instance, {
-          RegionId: regionId,
-          ResourceGroupId: resourceGroupId,
-        }),
-      async (t) => {
-        if (t.Status === "Running" || t.Status === "Stopped") {
-          await this.doAction(Services.ECS, "DeleteInstance", { InstanceId: t.InstanceId, Force: "true" });
-        }
-      }
-    );
+  async createTemplate(
+    Content: string,
+    TemplateName: string,
+    RegionId: string,
+    params: ParameterType = {}
+  ): Promise<void> {
+    await this.callOos("CreateTemplate", { Content, TemplateName, RegionId, ...params });
   }
 
-  async determineZoneId(regionId: string, instanceChargeType: string, instanceType: string): Promise<string> {
-    const zoneId = (
-      await this.doAction(Services.ECS, "DescribeZones", {
-        RegionId: regionId,
-        InstanceChargeType: instanceChargeType,
-      })
-    ).Zones.Zone.find((z: any) => z.AvailableInstanceTypes.InstanceTypes.includes(instanceType))?.ZoneId;
-    if (!zoneId) {
-      throw new Error(`Instance type ${instanceType} is not available in region: ${regionId}`);
-    }
-    return zoneId;
+  async deleteTemplate(TemplateName: string, RegionId: string, params: ParameterType = {}): Promise<void> {
+    await this.callOos("DeleteTemplate", { TemplateName, RegionId, ...params });
   }
 
-  private async doAction(service: ServiceRef, action: string, params: Record<string, string> = {}): Promise<any> {
+  async startExecution(RegionId: string, TemplateName: string, params: ParameterType = {}): Promise<Execution> {
+    return (await this.callOos("StartExecution", { RegionId, TemplateName, ...params })).Execution;
+  }
+
+  async triggerExecution(Content: string, ExecutionId: string, RegionId: string, Type: string): Promise<void> {
+    await this.callOos("TriggerExecution", { Content, ExecutionId, RegionId, Type });
+  }
+
+  async cancelExecution(ExecutionId: string, RegionId: string): Promise<void> {
+    await this.callOos("CancelExecution", { ExecutionId, RegionId });
+  }
+
+  async deleteExecutions(ExecutionIds: string[], RegionId: string): Promise<void> {
+    await this.callOos("DeleteExecutions", { ExecutionIds: JSON.stringify(ExecutionIds), RegionId });
+  }
+
+  private callOos(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "oos." + params.RegionId, version: "2019-06-01" }, action, params);
+  }
+
+  private async callRpc(
+    service: { name: string; version: string },
+    action: string,
+    params: ParameterType = {}
+  ): Promise<any> {
     const finalParams: Record<string, string> = {
       Action: action,
       AccessKeyId: this.credentials.accessKeyId,
@@ -273,55 +325,37 @@ export class AliyunOperations {
       ...params,
     };
 
-    finalParams["Signature"] = OpenApiUtil.getRPCSignature(finalParams, "GET", this.credentials.accessKeySecret);
+    finalParams.Signature = OpenApiUtil.getRPCSignature(finalParams, "GET", this.credentials.accessKeySecret);
     try {
       return (await this.http.get(`https://${service.name}.aliyuncs.com/`, { params: finalParams })).data;
-    } catch (e) {
-      const errorResponse: Response = e.response.data;
-      e.errorCode = errorResponse.Code;
-      e.errorMessage = errorResponse.Message;
-      e.message = `ErrorCode: ${errorResponse.Code}; ErrorMessage: ${errorResponse.Message}`;
-      throw e;
+    } catch (err) {
+      const errorResponse: Response = err.response.data;
+      const wrappedError = new Error(`ErrorCode: ${errorResponse.Code}; ErrorMessage: ${errorResponse.Message}`);
+      wrappedError.name = <string>errorResponse.Code;
+      Error.captureStackTrace(wrappedError);
+      throw wrappedError;
     }
   }
 
-  private async findPagedResources<T, R extends PagedResponse>(
-    service: ServiceRef,
+  private findPagedResources<T, R extends PagedResponse>(
+    callSpec: (action: string, params: ParameterType) => Promise<any>,
     action: string,
-    extractor: (response: any) => T[],
-    params: Record<string, string> = {}
+    extractor: (response: R) => T[] | undefined,
+    params: ParameterType = {}
   ): Promise<T[]> {
     return findPagedResources(
-      (pageable) => this.doAction(service, action, { PageNumber: (<number>pageable).toString(), ...params }),
+      (pageable) => callSpec.bind(this)(action, { PageNumber: (<number>pageable).toString(), ...params }),
       (previousPageable) => <number>previousPageable + 1,
       (response: R) => response.PageNumber * response.PageSize < response.TotalCount,
       extractor,
       1
     );
   }
+}
 
-  private deleteResources<T>(
-    describeResources: () => Promise<T[]>,
-    deleteHandler: (target: T) => Promise<true | void>
-  ): Promise<void> {
-    return waitCondition(async () => {
-      const resources = await describeResources();
-      let remain = false;
-      try {
-        for (const resource of resources) {
-          const deleted = await deleteHandler(resource);
-          if (!deleted) {
-            remain = true;
-          }
-        }
-      } catch (e) {
-        if (e.errorCode.includes("DependencyViolation")) {
-          remain = true;
-        } else {
-          throw e;
-        }
-      }
-      return !remain;
-    });
-  }
+function flatten(prefix: string, values: string[]): ParameterType {
+  return values.reduce((p: ParameterType, c, i) => {
+    p[`${prefix}.${i + 1}`] = c;
+    return p;
+  }, {});
 }

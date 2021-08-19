@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
 import yargs from "yargs";
-import { TunnelProxyFacade } from "../lib/core/TunnelProxyFacade";
-import { DEFAULT_REGION as DEFAULT_PROXY_REGION } from "../lib/core/aws/regions";
-import { DEFAULT_CONFIG_PATH } from "../lib/core/clash";
-import { DEFAULT_REGION as DEFAULT_TUNNEL_REGION } from "../lib/core/aliyun/regions";
+import path from "path";
+import os from "os";
+import TunnelProxyFacade from "../index";
 
 async function main(): Promise<void> {
   const facade = new TunnelProxyFacade();
@@ -14,16 +13,24 @@ async function main(): Promise<void> {
     .options({
       region: {
         type: "string",
-        default: DEFAULT_PROXY_REGION,
+        default: "us-east-1",
         description: "AWS lightsail region for proxy deployment",
       },
       tunnelRegion: {
+        alias: "tunnel-region",
         type: "string",
-        description: "Aliyun region for tunnel deployment, for example: " + DEFAULT_TUNNEL_REGION,
+        description: "Aliyun region for tunnel deployment, for example: cn-shanghai",
+      },
+      tunnelArch: {
+        alias: "tunnel-arch",
+        type: "string",
+        description: "Deployment architecture for tunnel infrastructures",
+        choices: ["PlainEcs", "AutoProvisioning"],
+        default: "AutoProvisioning",
       },
       output: {
         type: "string",
-        default: DEFAULT_CONFIG_PATH,
+        default: path.join(os.homedir(), ".config", "clash", "fanqiang.yaml"),
         description: "Path for clash config file, only applicable for create command",
       },
     })
@@ -33,17 +40,18 @@ async function main(): Promise<void> {
       "create",
       "Create new tunnel proxy infrastructures",
       () => void 0,
-      async (args) => {
-        await facade.createTunnelProxy(args.region, args.output, args.tunnelRegion);
-      }
+      (args) =>
+        facade.createTunnelProxy(
+          args.region,
+          args.output,
+          args.tunnelRegion ? { region: args.tunnelRegion, arch: args.tunnelArch } : undefined
+        )
     )
     .command(
       "destroy",
       "Destroy tunnel proxy infrastructures",
       () => void 0,
-      async (args) => {
-        await facade.destroyTunnelProxy(args.region, args.tunnelRegion);
-      }
+      (args) => facade.destroyTunnelProxy(args.region, args.tunnelRegion)
     )
     .help()
     .version()

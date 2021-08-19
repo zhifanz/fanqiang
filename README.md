@@ -6,6 +6,7 @@ This project creates a command line tool that helps to automatically deploy a sh
 
 - Has **Nodejs** installed on local machine. See [download link][1] for more details.
 - Has an AWS access token. See [manage AWS access token][2] for more details.
+- Has an Aliyun access token if you want to use tunnel feature.
 
 [1]: https://nodejs.org/en/
 [2]: https://console.aws.amazon.com/iam/home#security_credential
@@ -26,14 +27,17 @@ Commands:
   destroy  Destroy tunnel proxy infrastructures
 
 Options:
-  --region   AWS lightsail region for proxy deployment
+  --region         AWS lightsail region for proxy deployment
                                                  [string] [default: "us-east-1"]
-  --tunnelRegion  Aliyun region for tunnel deployment, for example: cn-shanghai
+  --tunnel-region  Aliyun region for tunnel deployment, for example: cn-shanghai
                                                                         [string]
-  --output   Path for clash config file, only applicable for create command
-                             [string] [default: "~/.config/clash/fanqiang.yaml"]
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
+  --tunnel-arch    Deployment architecture for tunnel infrastructures
+                     [string] [choices: "PlainEcs", "AutoProvisioning"(default)]
+  --output         Path for clash config file, only applicable for create
+                   command
+                         [string] [default: "$HOME/.config/clash/fanqiang.yaml"]
+  --help           Show help                                           [boolean]
+  --version        Show version number                                 [boolean]
 ```
 
 ## Setup Credentials for AWS Services
