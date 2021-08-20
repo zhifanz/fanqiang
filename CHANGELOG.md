@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/zhifanz/fanqiang/compare/v1.2.2...v1.3.0) (2021-08-20)
+
+
+### Features
+
+* auto provisioning strategy for tunnel deployment ([d52f51a](https://github.com/zhifanz/fanqiang/commit/d52f51a21f5108ef19c28524a63db37e03bf08a2))
+
 ## [1.2.2](https://github.com/zhifanz/fanqiang/compare/v1.2.1...v1.2.2) (2021-08-14)
 
 
