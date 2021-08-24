@@ -1,7 +1,4 @@
-import { AwsLightsailProxyDeployer } from "./aws/AwsLightsailProxyDeployer";
-import { LightsailClient } from "@aws-sdk/client-lightsail";
-import { AwsLightsailTemplate } from "./aws/AwsLightsailTemplate";
-import { DEFAULT_INSTANCE_NAME } from "./aws/AwsLightsailProxyConfig";
+import { ProxyCreatingService } from "./aws/ProxyCreatingService";
 import { generateConfigFrom } from "./clash";
 import * as fs from "fs-extra";
 import { TunnelDestroyingService } from "./aliyun/TunnelDestroyingService";
@@ -9,6 +6,7 @@ import { AliyunOperations } from "./aliyun/AliyunOperations";
 import axios from "axios";
 import { defaultCredentials } from "./aliyun/credentials";
 import { TunnelCreatingService } from "./aliyun/TunnelCreatingService";
+import { ProxyDestroyingService } from "./aws/ProxyDestroyingService";
 
 export class TunnelProxyFacade {
   async createTunnelProxy(
@@ -18,10 +16,10 @@ export class TunnelProxyFacade {
   ): Promise<void> {
     await fs.ensureFile(clashConfigPath);
     console.log(`Creating proxy infrastructures for region [${proxyRegion}]...`);
-    const endpoints = await new AwsLightsailProxyDeployer().apply(proxyRegion);
+
+    const endpoints = await invokeService(new ProxyCreatingService(proxyRegion), (s) => s.create("fanqiang"));
     if (tunnelConfig) {
       console.log(`Creating tunnel infrastructures for region [${tunnelConfig.region}]...`);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
       const serviceConstructor = require(`./aliyun/${tunnelConfig.arch}TunnelCreatingService`).default;
       endpoints.ipv4 = (
         await (<TunnelCreatingService>new serviceConstructor(defaultAliyunOperations())).create(tunnelConfig.region, {
@@ -42,19 +40,19 @@ export class TunnelProxyFacade {
       await new TunnelDestroyingService(defaultAliyunOperations()).destroy(tunnelRegion);
     }
     console.log("Destroying proxy infrastructures...");
-    const client = new LightsailClient({ region: proxyRegion });
-    try {
-      await new AwsLightsailTemplate(client).deleteInstance(DEFAULT_INSTANCE_NAME);
-    } catch (e) {
-      if (e.code?.includes("DoesNotExist")) {
-        console.log(e.message);
-      } else {
-        throw e;
-      }
-    } finally {
-      client.destroy();
-    }
+    await invokeService(new ProxyDestroyingService(proxyRegion), (s) => s.destroy("fanqiang"));
     console.log("Successfully destroy tunnel proxy!");
+  }
+}
+
+function invokeService<S extends { dispose: () => void }, R>(
+  service: S,
+  invoker: (service: S) => Promise<R>
+): Promise<R> {
+  try {
+    return invoker(service);
+  } finally {
+    service.dispose();
   }
 }
 
