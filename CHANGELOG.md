@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/zhifanz/fanqiang/compare/v1.4.0...v1.4.1) (2021-08-27)
+
+
+### Bug Fixes
+
+* catch error by name when bucket already exists ([74b2c0b](https://github.com/zhifanz/fanqiang/commit/74b2c0b64514655b38a9252408e5284a19a18c4e))
+
 # [1.4.0](https://github.com/zhifanz/fanqiang/compare/v1.3.0...v1.4.0) (2021-08-27)
 
 
