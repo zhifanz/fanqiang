@@ -1,5 +1,7 @@
 import { waitCondition } from "../langUtils";
 
+export const DEFAULT_REGION = "cn-shanghai";
+
 export async function waitOperation<T>(operation: () => Promise<T>, ignoredError: string): Promise<T> {
   let result: T;
   await waitCondition(async () => {

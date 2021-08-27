@@ -19,6 +19,7 @@ export type Execution = { ExecutionId: string; Status: string };
 export type AutoProvisioningGroup = { AutoProvisioningGroupId: string };
 export type Policy = { PolicyName: string; PolicyType: string };
 export type RamRole = { RoleName: string };
+export type User = { UserId: string };
 
 export class AliyunOperations {
   constructor(private readonly http: AxiosInstance, private readonly credentials: AliyunCredentials) {}
@@ -254,6 +255,14 @@ export class AliyunOperations {
 
   private callRam(action: string, params: ParameterType = {}): Promise<any> {
     return this.callRpc({ name: "ram", version: "2015-05-01" }, action, params);
+  }
+
+  async getUser(): Promise<User> {
+    return (await this.callIms("GetUser", { UserAccessKeyId: this.credentials.accessKeyId })).User;
+  }
+
+  private callIms(action: string, params: ParameterType = {}): Promise<any> {
+    return this.callRpc({ name: "ims", version: "2019-08-15" }, action, params);
   }
 
   listExecutions(RegionId: string, params: ParameterType = {}): Promise<Execution[]> {

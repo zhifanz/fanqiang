@@ -19,11 +19,9 @@ import {
 } from "@aws-sdk/client-lightsail";
 import { OpenInstancePublicPortsCommandInput } from "@aws-sdk/client-lightsail/commands/OpenInstancePublicPortsCommand";
 import { GetInstanceStateCommandInput } from "@aws-sdk/client-lightsail/commands/GetInstanceStateCommand";
-import { nonNullArray } from "../langUtils";
+import { nonNullArray, Strict } from "../langUtils";
 import { findPagedResources } from "../cloudServiceOperations";
 import _ from "lodash";
-
-type Strict<T> = { [K in keyof T]: NonNullable<T[K]> };
 
 export class AwsLightsailOperations {
   constructor(readonly client: LightsailClient) {}

@@ -7,6 +7,10 @@ import axios from "axios";
 import { defaultCredentials } from "./aliyun/credentials";
 import { TunnelCreatingService } from "./aliyun/TunnelCreatingService";
 import { ProxyDestroyingService } from "./aws/ProxyDestroyingService";
+import { AliyunOssCloudStorage } from "./aliyun/AliyunOssCloudStorage";
+import { AwsS3CloudStorage } from "./aws/AwsS3CloudStorage";
+import { CloudStorage } from "./CloudStorage";
+import { S3Client } from "@aws-sdk/client-s3";
 
 export class TunnelProxyFacade {
   async createTunnelProxy(
@@ -14,7 +18,6 @@ export class TunnelProxyFacade {
     clashConfigPath: string,
     tunnelConfig?: { region: string; arch: string }
   ): Promise<void> {
-    await fs.ensureFile(clashConfigPath);
     console.log(`Creating proxy infrastructures for region [${proxyRegion}]...`);
 
     const endpoints = await invokeService(new ProxyCreatingService(proxyRegion), (s) => s.create("fanqiang"));
@@ -30,8 +33,21 @@ export class TunnelProxyFacade {
       ).address;
     }
     console.log("Successfully created tunnel proxy!");
-    await fs.writeFile(clashConfigPath, generateConfigFrom(endpoints));
-    console.log("saved client config to " + clashConfigPath);
+    const configContent = generateConfigFrom(endpoints);
+    if (clashConfigPath === "link") {
+      const cloudStorage: CloudStorage = tunnelConfig
+        ? new AliyunOssCloudStorage(
+            defaultCredentials(),
+            async () => (await new AliyunOperations(axios.create(), defaultCredentials()).getUser()).UserId
+          )
+        : new AwsS3CloudStorage(new S3Client({ region: proxyRegion }));
+      const link = await cloudStorage.putObject("clash/config.yaml", configContent);
+      console.log("Saved Clash config to link: " + link);
+    } else {
+      await fs.ensureFile(clashConfigPath);
+      await fs.writeFile(clashConfigPath, configContent);
+      console.log("Saved Clash config to file: " + clashConfigPath);
+    }
   }
 
   async destroyTunnelProxy(proxyRegion: string, tunnelRegion?: string): Promise<void> {
@@ -40,7 +56,9 @@ export class TunnelProxyFacade {
       await new TunnelDestroyingService(defaultAliyunOperations()).destroy(tunnelRegion);
     }
     console.log("Destroying proxy infrastructures...");
-    await invokeService(new ProxyDestroyingService(proxyRegion), (s) => s.destroy("fanqiang"));
+    await invokeService(new ProxyDestroyingService(proxyRegion), (s) =>
+      s.destroy("fanqiang", tunnelRegion ? undefined : proxyRegion)
+    );
     console.log("Successfully destroy tunnel proxy!");
   }
 }

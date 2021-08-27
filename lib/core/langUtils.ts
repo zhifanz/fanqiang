@@ -1,3 +1,5 @@
+export type Strict<T> = { [K in keyof T]: NonNullable<T[K]> };
+
 export async function promiseAllSync<T, R>(values: T[], handler: (value: T) => Promise<R>): Promise<R[]> {
   const result: R[] = new Array(values.length);
   for (const v of values) {

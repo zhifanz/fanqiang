@@ -2,6 +2,8 @@ import { TunnelServiceSupport } from "./TunnelServiceSupport";
 import { waitOperation, willThrowError } from "./aliyunUtils";
 import { ResourceGroup } from "./AliyunOperations";
 import { promiseAllSync } from "../langUtils";
+import { AliyunOssCloudStorage } from "./AliyunOssCloudStorage";
+import { defaultCredentials } from "./credentials";
 
 export class TunnelDestroyingService extends TunnelServiceSupport {
   async destroy(regionId: string): Promise<void> {
@@ -38,6 +40,11 @@ export class TunnelDestroyingService extends TunnelServiceSupport {
     for (const eip of await this.operations.describeEipAddresses(regionId, { ResourceGroupId: resourceGroup.Id })) {
       await this.operations.releaseEipAddress(eip.AllocationId, regionId);
     }
+
+    await new AliyunOssCloudStorage(
+      defaultCredentials(),
+      async () => (await this.operations.getUser()).UserId
+    ).destroy();
   }
 
   private async deleteExecutions(regionId: string, resourceGroup: ResourceGroup): Promise<void> {
