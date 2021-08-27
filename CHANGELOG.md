@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/zhifanz/fanqiang/compare/v1.3.0...v1.4.0) (2021-08-27)
+
+
+### Features
+
+* support download clash config from url ([e3f1882](https://github.com/zhifanz/fanqiang/commit/e3f18823963404cefb6be79e7ff0613ebcd2911d))
+
 # [1.3.0](https://github.com/zhifanz/fanqiang/compare/v1.2.2...v1.3.0) (2021-08-20)
 
 
