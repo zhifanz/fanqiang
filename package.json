@@ -9,7 +9,7 @@
     "lint:fix": "eslint --ext .ts --fix . && prettier --write .",
     "test": "mocha --timeout 10000 --require espower-typescript/guess \"test/**/*.ts\"",
     "prepare": "husky install",
-    "build": "tsc"
+    "build": "tsc --resolveJsonModule"
   },
   "repository": {
     "type": "git",
