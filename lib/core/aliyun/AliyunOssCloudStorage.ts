@@ -51,7 +51,7 @@ export class AliyunOssCloudStorage implements CloudStorage {
       try {
         await this.client().getBucketInfo(bn);
       } catch (e) {
-        if (e.name === "") {
+        if (e.name === "NoSuchBucketError") {
           await this.client().putBucket(bn);
           await this.client().putBucketACL(bn, "public-read");
         } else {
