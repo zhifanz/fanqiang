@@ -18,8 +18,8 @@ const InstanceConstants = {
 export type InstanceConfig = typeof InstanceConstants & { readonly UserData: string; readonly SecurityGroupId: string };
 
 export abstract class AbstractTunnelCreatingService extends TunnelServiceSupport implements TunnelCreatingService {
-  async create(regionId: string, proxyAddress: AddressInfo): Promise<AddressInfo> {
-    const resourceGroup = await this.defaultResourceGroup();
+  async create(regionId: string, resourceGroupName: string, proxyAddress: AddressInfo): Promise<AddressInfo> {
+    const resourceGroup = await this.ensureResourceGroup(resourceGroupName);
     console.log("Creating VPC...");
     const vpc = await this.operations.createVpc(regionId, {
       ResourceGroupId: resourceGroup.Id,

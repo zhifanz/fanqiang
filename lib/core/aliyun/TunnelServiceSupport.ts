@@ -4,13 +4,16 @@ import { waitCondition } from "../langUtils";
 export class TunnelServiceSupport {
   constructor(protected readonly operations: AliyunOperations) {}
 
-  protected async defaultResourceGroup(): Promise<ResourceGroup> {
-    const resourceGroups = await this.operations.listResourceGroups();
-    let found = resourceGroups.find((g) => g.Name === "fanqiang");
+  protected async ensureResourceGroup(resourceGroupName: string): Promise<ResourceGroup> {
+    let found = await this.findResourceGroup(resourceGroupName);
     if (!found) {
-      found = await this.operations.createResourceGroup("fanqiang", "Fan Qiang");
+      found = await this.operations.createResourceGroup(resourceGroupName, resourceGroupName);
     }
     return found;
+  }
+
+  protected async findResourceGroup(resourceGroupName: string): Promise<ResourceGroup | undefined> {
+    return (await this.operations.listResourceGroups()).find((g) => g.Name === resourceGroupName);
   }
 
   protected async createVSwitchAvailable(

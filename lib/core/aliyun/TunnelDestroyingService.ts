@@ -3,11 +3,14 @@ import { waitOperation, willThrowError } from "./aliyunUtils";
 import { ResourceGroup } from "./AliyunOperations";
 import { promiseAllSync } from "../langUtils";
 import { AliyunOssCloudStorage } from "./AliyunOssCloudStorage";
-import { defaultCredentials } from "./credentials";
 
 export class TunnelDestroyingService extends TunnelServiceSupport {
-  async destroy(regionId: string): Promise<void> {
-    const resourceGroup = await super.defaultResourceGroup();
+  async destroy(regionId: string, resourceGroupName: string): Promise<void> {
+    const resourceGroup = await super.findResourceGroup(resourceGroupName);
+    if (!resourceGroup) {
+      console.log("Resource group does not exist: " + resourceGroupName);
+      return;
+    }
     console.log("Deleting OOS services...");
     await this.deleteExecutions(regionId, resourceGroup);
     for (const group of await this.operations.describeAutoProvisioningGroups(regionId)) {
@@ -41,10 +44,7 @@ export class TunnelDestroyingService extends TunnelServiceSupport {
       await this.operations.releaseEipAddress(eip.AllocationId, regionId);
     }
 
-    await new AliyunOssCloudStorage(
-      defaultCredentials(),
-      async () => (await this.operations.getUser()).UserId
-    ).destroy();
+    await new AliyunOssCloudStorage((await this.operations.getUser()).UserId).destroy(regionId);
   }
 
   private async deleteExecutions(regionId: string, resourceGroup: ResourceGroup): Promise<void> {

@@ -60,6 +60,7 @@
     "typescript": "^4.3.5"
   },
   "dependencies": {
+    "@alicloud/credentials": "^2.1.1",
     "@alicloud/openapi-client": "^0.3.3",
     "@alicloud/tea-typescript": "^1.7.1",
     "@aws-sdk/client-iam": "^3.27.0",

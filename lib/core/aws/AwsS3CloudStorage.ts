@@ -10,78 +10,70 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { nonNullArray, Strict } from "../langUtils";
-import { CloudStorage } from "../CloudStorage";
-import { accountId } from "./awsUtils";
+import { CloudStorage } from "../../domain/CloudStorage";
+import { accountId, invokeDestroyCapable, invokeIgnoreError } from "./awsUtils";
+import { APP_NAME } from "../Configuration";
 
 export class AwsS3CloudStorage implements CloudStorage {
-  private checked = false;
-
-  constructor(readonly client: S3Client) {}
-
-  private async ListObjectKeys(Bucket: string): Promise<string[]> {
-    let response: ListObjectsV2CommandOutput;
-    const params: Strict<ListObjectsV2CommandInput> = { Bucket };
-    const objectKeys: string[] = [];
-    do {
-      response = await this.client.send(new ListObjectsV2Command(params));
-      if (response.KeyCount) {
-        objectKeys.push(...nonNullArray(response.Contents?.map((c) => <string>c.Key)));
-      }
-      params.ContinuationToken = response.NextContinuationToken;
-    } while (response.IsTruncated);
-    return objectKeys;
+  async destroy(region: string): Promise<void> {
+    return invokeDestroyCapable(new S3Client({ region }), async (client) => {
+      const Bucket = await bucketName();
+      await invokeIgnoreError(
+        async () => {
+          const keys = await listObjectKeys(Bucket, client);
+          await client.send(
+            new DeleteObjectsCommand({
+              Bucket,
+              Delete: { Objects: keys.map((k) => ({ Key: k })) },
+            })
+          );
+          await client.send(new DeleteBucketCommand({ Bucket: Bucket }));
+        },
+        "NoSuchBucket",
+        "Bucket does not exists: " + Bucket
+      );
+    });
   }
 
-  async ensureBucket(): Promise<void> {
-    if (!this.checked) {
+  putObject(region: string, objectKey: string, content: string): Promise<string> {
+    return invokeDestroyCapable(new S3Client({ region }), async (client) => {
       const Bucket = await bucketName();
       try {
-        await this.client.send(new GetBucketLocationCommand({ Bucket }));
+        await client.send(new GetBucketLocationCommand({ Bucket }));
       } catch (e) {
-        if (e.name === "NoSuchBucket") {
-          await this.client.send(new CreateBucketCommand({ Bucket: await bucketName(), ACL: "public-read" }));
-        } else {
+        if (e.name !== "NoSuchBucket") {
           throw e;
         }
+        await client.send(new CreateBucketCommand({ Bucket, ACL: "public-read" }));
       }
-    }
-    this.checked = true;
-  }
 
-  async destroy(): Promise<void> {
-    const bn = await bucketName();
-    try {
-      const keys = await this.ListObjectKeys(bn);
-      await this.client.send(
-        new DeleteObjectsCommand({
-          Bucket: bn,
-          Delete: { Objects: keys.map((k) => ({ Key: k })) },
+      await client.send(
+        new PutObjectCommand({
+          Bucket,
+          Key: objectKey,
+          Body: content,
+          ACL: "public-read",
         })
       );
-      await this.client.send(new DeleteBucketCommand({ Bucket: bn }));
-    } catch (e) {
-      if (e.name === "NoSuchBucket") {
-        console.log("Bucket does not exists: " + bn);
-      } else {
-        throw e;
-      }
-    }
-  }
-
-  async putObject(objectKey: string, content: string): Promise<string> {
-    await this.ensureBucket();
-    await this.client.send(
-      new PutObjectCommand({
-        Bucket: await bucketName(),
-        Key: objectKey,
-        Body: content,
-        ACL: "public-read",
-      })
-    );
-    return `http://${await bucketName()}.s3.amazonaws.com/${objectKey}`;
+      return `http://${await bucketName()}.s3.amazonaws.com/${objectKey}`;
+    });
   }
 }
 
 async function bucketName(): Promise<string> {
-  return `fanqiang.${await accountId()}`.toLowerCase();
+  return `${APP_NAME}.${await accountId()}`.toLowerCase();
+}
+
+async function listObjectKeys(Bucket: string, client: S3Client): Promise<string[]> {
+  let response: ListObjectsV2CommandOutput;
+  const params: Strict<ListObjectsV2CommandInput> = { Bucket };
+  const objectKeys: string[] = [];
+  do {
+    response = await client.send(new ListObjectsV2Command(params));
+    if (response.KeyCount) {
+      objectKeys.push(...nonNullArray(response.Contents?.map((c) => <string>c.Key)));
+    }
+    params.ContinuationToken = response.NextContinuationToken;
+  } while (response.IsTruncated);
+  return objectKeys;
 }

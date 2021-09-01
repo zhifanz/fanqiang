@@ -1,83 +1,60 @@
-import { CloudStorage } from "../CloudStorage";
+import { CloudStorage } from "../../domain/CloudStorage";
 import OSS from "ali-oss";
-import { AliyunCredentials } from "./credentials";
-import { DEFAULT_REGION } from "./aliyunUtils";
+import { getCredentials } from "./credentials";
+import { APP_NAME } from "../Configuration";
 
 export class AliyunOssCloudStorage implements CloudStorage {
-  private bucketName: string | undefined;
-  private readonly region: string;
-  private checked = false;
-
-  constructor(
-    private readonly credentials: AliyunCredentials,
-    private readonly fetchAccountId: () => Promise<string>,
-    region?: string
-  ) {
-    this.region = region || DEFAULT_REGION;
+  private readonly bucket: string;
+  constructor(namespace: string) {
+    this.bucket = `${APP_NAME}-${namespace}`;
   }
 
-  async destroy(): Promise<void> {
-    const bn = await this.uniqueName();
+  async destroy(region: string): Promise<void> {
+    const client = new OSS({
+      ...(await getCredentials()),
+      bucket: this.bucket,
+      region,
+      endpoint: `oss-${region}.aliyuncs.com`,
+    });
     try {
       let isTruncated = true;
       while (isTruncated) {
-        const result = await this.client().list(null, {});
-        await this.client().deleteMulti(
+        const result = await client.list(null, {});
+        await client.deleteMulti(
           result.objects.map((o) => o.name),
           { quiet: true }
         );
         isTruncated = result.isTruncated;
       }
-      await this.client().deleteBucket(bn);
+      await client.deleteBucket(this.bucket);
     } catch (e) {
       if (e.name === "NoSuchBucketError") {
-        console.log("Bucket not exists: " + bn);
+        console.log("Bucket not exists: " + this.bucket);
         return;
       }
       throw e;
     }
   }
 
-  async putObject(objectKey: string, content: string): Promise<string> {
-    await this.ensureBucket();
-    const url = (await this.client().put(objectKey, Buffer.from(content))).url;
-    await this.client().putACL(objectKey, "public-read");
-    return url;
-  }
-
-  private async ensureBucket(): Promise<void> {
-    if (!this.checked) {
-      const bn = await this.uniqueName();
-      try {
-        await this.client().getBucketInfo(bn);
-      } catch (e) {
-        if (e.name === "NoSuchBucketError") {
-          await this.client().putBucket(bn);
-          await this.client().putBucketACL(bn, "public-read");
-        } else {
-          throw e;
-        }
+  async putObject(region: string, objectKey: string, content: string): Promise<string> {
+    const client = new OSS({
+      ...(await getCredentials()),
+      region,
+      endpoint: `oss-${region}.aliyuncs.com`,
+    });
+    try {
+      await client.getBucketInfo(this.bucket);
+    } catch (e) {
+      if (e.name !== "NoSuchBucketError") {
+        throw e;
       }
+      await client.putBucket(this.bucket);
+      await client.putBucketACL(this.bucket, "public-read");
     }
-    this.checked = true;
-  }
+    client.useBucket(this.bucket);
 
-  private async uniqueName(): Promise<string> {
-    if (!this.bucketName) {
-      this.bucketName = `fanqiang-${await this.fetchAccountId()}`;
-    }
-    return this.bucketName;
-  }
-
-  private client(): OSS {
-    const config: OSS.Options = {
-      ...this.credentials,
-      region: this.region,
-      endpoint: `oss-${this.region}.aliyuncs.com`,
-    };
-    if (this.bucketName) {
-      config.bucket = this.bucketName;
-    }
-    return new OSS(config);
+    const url = (await client.put(objectKey, Buffer.from(content))).url;
+    await client.putACL(objectKey, "public-read");
+    return url;
   }
 }

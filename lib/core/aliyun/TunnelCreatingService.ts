@@ -1,5 +1,5 @@
-import { AddressInfo } from "net";
+import { AddressInfo } from "../../domain/TunnelProxyEndpoints";
 
 export interface TunnelCreatingService {
-  create(regionId: string, proxyAddress: AddressInfo): Promise<AddressInfo>;
+  create(regionId: string, resourceGroupName: string, proxyAddress: AddressInfo): Promise<AddressInfo>;
 }

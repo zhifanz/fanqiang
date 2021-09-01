@@ -1,13 +1,9 @@
 #!/usr/bin/env node
 
 import yargs from "yargs";
-import path from "path";
-import os from "os";
-import TunnelProxyFacade from "../index";
+import handlers from "../index";
 
 async function main(): Promise<void> {
-  const facade = new TunnelProxyFacade();
-
   await yargs(process.argv.slice(2))
     .usage("Usage: $0 <command> [options]")
     .options({
@@ -16,22 +12,19 @@ async function main(): Promise<void> {
         default: "us-east-1",
         description: "AWS lightsail region for proxy deployment",
       },
-      tunnelRegion: {
-        alias: "tunnel-region",
+      "tunnel-region": {
         type: "string",
         description: "Aliyun region for tunnel deployment, for example: cn-shanghai",
       },
-      tunnelArch: {
-        alias: "tunnel-arch",
-        type: "string",
-        description: "Deployment architecture for tunnel infrastructures",
-        choices: ["PlainEcs", "AutoProvisioning"],
-        default: "AutoProvisioning",
+      "auto-provisioning": {
+        boolean: true,
+        default: false,
+        description: "Whether to apply auto provisioning strategy for instance creation",
       },
-      output: {
-        type: "string",
-        default: path.join(os.homedir(), ".config", "clash", "fanqiang.yaml"),
-        description: "Path for clash config file, only applicable for create command",
+      "output-link": {
+        boolean: true,
+        default: false,
+        description: "Whether to save clash config file on cloud storage, only applicable for create command",
       },
     })
     .demandCommand(1)
@@ -41,18 +34,18 @@ async function main(): Promise<void> {
       "Create new tunnel proxy infrastructures",
       () => void 0,
       (args) =>
-        facade.createTunnelProxy(
+        handlers.create(
           args.region,
-          args.output,
-          args.tunnelRegion ? { region: args.tunnelRegion, arch: args.tunnelArch } : undefined
+          args["output-link"],
+          args["tunnel-region"]
+            ? {
+                region: args["tunnel-region"],
+                autoProvisioning: args["auto-provisioning"],
+              }
+            : undefined
         )
     )
-    .command(
-      "destroy",
-      "Destroy tunnel proxy infrastructures",
-      () => void 0,
-      (args) => facade.destroyTunnelProxy(args.region, args.tunnelRegion)
-    )
+    .command("destroy", "Destroy tunnel proxy infrastructures", () => void 0, handlers.destroy)
     .help()
     .version()
     .showHelpOnFail(true).argv;

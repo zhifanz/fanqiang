@@ -1,5 +1,6 @@
-import { ProxyConfig } from "./ProxyConfig";
+export type AddressInfo = { address: string; port: number };
 
-export interface TunnelProxyEndpoints extends ProxyConfig {
-  ipv4: string;
+export interface TunnelProxyEndpoints extends AddressInfo {
+  encryptionAlgorithm: string;
+  password: string;
 }

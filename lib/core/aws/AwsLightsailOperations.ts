@@ -20,7 +20,7 @@ import {
 import { OpenInstancePublicPortsCommandInput } from "@aws-sdk/client-lightsail/commands/OpenInstancePublicPortsCommand";
 import { GetInstanceStateCommandInput } from "@aws-sdk/client-lightsail/commands/GetInstanceStateCommand";
 import { nonNullArray, Strict } from "../langUtils";
-import { findPagedResources } from "../cloudServiceOperations";
+import { findPagedResources } from "../pagedRequests";
 import _ from "lodash";
 
 export class AwsLightsailOperations {

@@ -1,18 +1,14 @@
-import { Bundle, IpAddressType, NetworkProtocol } from "@aws-sdk/client-lightsail";
+import { Bundle, IpAddressType, LightsailClient, NetworkProtocol } from "@aws-sdk/client-lightsail";
 import { readCloudInitResource } from "../cloudInit";
 import { TunnelProxyEndpoints } from "../../domain/TunnelProxyEndpoints";
 import { waitCondition } from "../langUtils";
 import { ProxyServiceSupport } from "./ProxyServiceSupport";
 import { randomBytes } from "crypto";
-
-const DEFAULT_CONFIG = {
-  port: 8388,
-  encryptionAlgorithm: "aes-256-gcm",
-} as const;
+import { invokeDestroyCapable } from "./awsUtils";
 
 export class ProxyCreatingService extends ProxyServiceSupport {
-  async create(instanceName: string): Promise<TunnelProxyEndpoints> {
-    const config = { ...DEFAULT_CONFIG, password: randomBytes(20).toString("base64") };
+  async create(instanceName: string, port: number): Promise<TunnelProxyEndpoints> {
+    const config = { encryptionAlgorithm: "aes-256-gcm", port, password: randomBytes(20).toString("base64") };
     await this.operations.CreateInstances({
       availabilityZone: await this.determineZone(),
       blueprintId: "amazon_linux_2",
@@ -30,7 +26,7 @@ export class ProxyCreatingService extends ProxyServiceSupport {
     const instance = await this.operations.GetInstance({ instanceName });
 
     return {
-      ipv4: <string>instance.publicIpAddress,
+      address: <string>instance.publicIpAddress,
       ...config,
     };
   }
@@ -60,4 +56,10 @@ async function shadowsocksSetupScript(port: number, password: string, encryption
     .replace("$ADDRESS", "[::]:" + port)
     .replace("$ENCRYPTION_ALGORITHM", encryptionAlgorithm)
     .replace("$PASSWORD", password);
+}
+
+export function createProxy(region: string, port: number, instanceName: string): Promise<TunnelProxyEndpoints> {
+  return invokeDestroyCapable(new LightsailClient({ region }), (client) =>
+    new ProxyCreatingService(client).create(instanceName, port)
+  );
 }

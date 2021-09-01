@@ -1,3 +1,3 @@
-import { TunnelProxyFacade } from "./lib/core/TunnelProxyFacade";
+import * as handlers from "./lib/handlers";
 
-export default TunnelProxyFacade;
+export default handlers;
