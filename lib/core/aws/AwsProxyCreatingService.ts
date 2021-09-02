@@ -1,29 +1,31 @@
-import { Bundle, IpAddressType, LightsailClient, NetworkProtocol } from "@aws-sdk/client-lightsail";
+import { Bundle, IpAddressType, NetworkProtocol } from "@aws-sdk/client-lightsail";
 import { readCloudInitResource } from "../cloudInit";
 import { TunnelProxyEndpoints } from "../../domain/TunnelProxyEndpoints";
 import { waitCondition } from "../langUtils";
 import { ProxyServiceSupport } from "./ProxyServiceSupport";
 import { randomBytes } from "crypto";
-import { invokeDestroyCapable } from "./awsUtils";
+import { CreateProxyHandler } from "../../domain/CreateProxyHandler";
 
-export class ProxyCreatingService extends ProxyServiceSupport {
-  async create(instanceName: string, port: number): Promise<TunnelProxyEndpoints> {
+export class AwsProxyCreatingService extends ProxyServiceSupport implements CreateProxyHandler {
+  async create(region: string, instanceName: string, port: number): Promise<TunnelProxyEndpoints> {
     const config = { encryptionAlgorithm: "aes-256-gcm", port, password: randomBytes(20).toString("base64") };
-    await this.operations.CreateInstances({
-      availabilityZone: await this.determineZone(),
+    await this.operations.CreateInstances(region, {
+      availabilityZone: await this.determineZone(region),
       blueprintId: "amazon_linux_2",
-      bundleId: await this.determineBundle(),
+      bundleId: await this.determineBundle(region),
       ipAddressType: IpAddressType.IPV4,
       instanceNames: [instanceName],
       userData: await shadowsocksSetupScript(config.port, config.password, config.encryptionAlgorithm),
     });
-    await waitCondition(async () => (await this.operations.GetInstanceState({ instanceName })).name === "running");
-    await this.operations.OpenInstancePublicPorts({
+    await waitCondition(
+      async () => (await this.operations.GetInstanceState(region, { instanceName })).name === "running"
+    );
+    await this.operations.OpenInstancePublicPorts(region, {
       instanceName,
       portInfo: { fromPort: config.port, toPort: config.port, protocol: NetworkProtocol.TCP },
     });
 
-    const instance = await this.operations.GetInstance({ instanceName });
+    const instance = await this.operations.GetInstance(region, { instanceName });
 
     return {
       address: <string>instance.publicIpAddress,
@@ -31,16 +33,18 @@ export class ProxyCreatingService extends ProxyServiceSupport {
     };
   }
 
-  private async determineBundle(): Promise<string> {
-    const bundles = (<Required<Bundle>[]>await this.operations.GetBundles(false)).sort((a, b) => a.price - b.price);
+  private async determineBundle(region: string): Promise<string> {
+    const bundles = (<Required<Bundle>[]>await this.operations.GetBundles(region, false)).sort(
+      (a, b) => a.price - b.price
+    );
     if (!bundles.length) {
       throw new Error("No available bundle!");
     }
     return bundles[0].bundleId;
   }
 
-  private async determineZone(): Promise<string> {
-    const zones = (await this.operations.GetRegion({ includeAvailabilityZones: true })).availabilityZones?.map(
+  private async determineZone(region: string): Promise<string> {
+    const zones = (await this.operations.GetRegion(region, { includeAvailabilityZones: true })).availabilityZones?.map(
       (z) => <string>z.zoneName
     );
     if (zones && zones.length) {
@@ -56,10 +60,4 @@ async function shadowsocksSetupScript(port: number, password: string, encryption
     .replace("$ADDRESS", "[::]:" + port)
     .replace("$ENCRYPTION_ALGORITHM", encryptionAlgorithm)
     .replace("$PASSWORD", password);
-}
-
-export function createProxy(region: string, port: number, instanceName: string): Promise<TunnelProxyEndpoints> {
-  return invokeDestroyCapable(new LightsailClient({ region }), (client) =>
-    new ProxyCreatingService(client).create(instanceName, port)
-  );
 }

@@ -1,10 +1,14 @@
 import { TunnelServiceSupport } from "./TunnelServiceSupport";
 import { waitOperation, willThrowError } from "./aliyunUtils";
-import { ResourceGroup } from "./AliyunOperations";
+import { AliyunOperations, ResourceGroup } from "./AliyunOperations";
 import { promiseAllSync } from "../langUtils";
 import { AliyunOssCloudStorage } from "./AliyunOssCloudStorage";
 
 export class TunnelDestroyingService extends TunnelServiceSupport {
+  constructor(operations: AliyunOperations, private readonly aliyunCloudStorage: AliyunOssCloudStorage) {
+    super(operations);
+  }
+
   async destroy(regionId: string, resourceGroupName: string): Promise<void> {
     const resourceGroup = await super.findResourceGroup(resourceGroupName);
     if (!resourceGroup) {
@@ -44,7 +48,7 @@ export class TunnelDestroyingService extends TunnelServiceSupport {
       await this.operations.releaseEipAddress(eip.AllocationId, regionId);
     }
 
-    await new AliyunOssCloudStorage((await this.operations.getUser()).UserId).destroy(regionId);
+    await this.aliyunCloudStorage.destroy(regionId);
   }
 
   private async deleteExecutions(regionId: string, resourceGroup: ResourceGroup): Promise<void> {

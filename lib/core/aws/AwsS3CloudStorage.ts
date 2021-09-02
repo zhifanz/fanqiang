@@ -9,59 +9,52 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { nonNullArray, Strict } from "../langUtils";
+import { invokeIgnoreError, nonNullArray, Strict } from "../langUtils";
 import { CloudStorage } from "../../domain/CloudStorage";
-import { accountId, invokeDestroyCapable, invokeIgnoreError } from "./awsUtils";
-import { APP_NAME } from "../Configuration";
+import { AwsSdkClientFactory } from "./AwsSdkClientFactory";
 
 export class AwsS3CloudStorage implements CloudStorage {
+  constructor(private readonly bucket: string, private readonly clientFactory: AwsSdkClientFactory<S3Client>) {}
+
   async destroy(region: string): Promise<void> {
-    return invokeDestroyCapable(new S3Client({ region }), async (client) => {
-      const Bucket = await bucketName();
-      await invokeIgnoreError(
-        async () => {
-          const keys = await listObjectKeys(Bucket, client);
-          await client.send(
-            new DeleteObjectsCommand({
-              Bucket,
-              Delete: { Objects: keys.map((k) => ({ Key: k })) },
-            })
-          );
-          await client.send(new DeleteBucketCommand({ Bucket: Bucket }));
-        },
-        "NoSuchBucket",
-        "Bucket does not exists: " + Bucket
-      );
-    });
+    const client = this.clientFactory.create(region);
+    await invokeIgnoreError(
+      async () => {
+        const keys = await listObjectKeys(this.bucket, client);
+        await client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: keys.map((k) => ({ Key: k })) },
+          })
+        );
+        await client.send(new DeleteBucketCommand({ Bucket: this.bucket }));
+      },
+      "NoSuchBucket",
+      "Bucket does not exists: " + this.bucket
+    );
   }
 
-  putObject(region: string, objectKey: string, content: string): Promise<string> {
-    return invokeDestroyCapable(new S3Client({ region }), async (client) => {
-      const Bucket = await bucketName();
-      try {
-        await client.send(new GetBucketLocationCommand({ Bucket }));
-      } catch (e) {
-        if (e.name !== "NoSuchBucket") {
-          throw e;
-        }
-        await client.send(new CreateBucketCommand({ Bucket, ACL: "public-read" }));
+  async putObject(region: string, objectKey: string, content: string): Promise<string> {
+    const client = this.clientFactory.create(region);
+    try {
+      await client.send(new GetBucketLocationCommand({ Bucket: this.bucket }));
+    } catch (e) {
+      if (e.name !== "NoSuchBucket") {
+        throw e;
       }
+      await client.send(new CreateBucketCommand({ Bucket: this.bucket, ACL: "public-read" }));
+    }
 
-      await client.send(
-        new PutObjectCommand({
-          Bucket,
-          Key: objectKey,
-          Body: content,
-          ACL: "public-read",
-        })
-      );
-      return `http://${await bucketName()}.s3.amazonaws.com/${objectKey}`;
-    });
+    await client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: objectKey,
+        Body: content,
+        ACL: "public-read",
+      })
+    );
+    return `http://${this.bucket}.s3.amazonaws.com/${objectKey}`;
   }
-}
-
-async function bucketName(): Promise<string> {
-  return `${APP_NAME}.${await accountId()}`.toLowerCase();
 }
 
 async function listObjectKeys(Bucket: string, client: S3Client): Promise<string[]> {

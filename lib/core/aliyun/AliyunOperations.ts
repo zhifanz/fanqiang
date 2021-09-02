@@ -1,5 +1,5 @@
 import { AxiosInstance } from "axios";
-import { Credentials } from "./credentials";
+import { AliyunCredentials } from "./aliyunCredentials";
 import OpenApiUtil from "@alicloud/openapi-util";
 import Util from "@alicloud/tea-util";
 import { findPagedResources } from "../pagedRequests";
@@ -22,7 +22,7 @@ export type RamRole = { RoleName: string };
 export type User = { UserId: string };
 
 export class AliyunOperations {
-  constructor(private readonly http: AxiosInstance, private readonly credentials: Credentials) {}
+  constructor(private readonly http: AxiosInstance, private readonly credentials: AliyunCredentials) {}
 
   describeSecurityGroups(RegionId: string, params: ParameterType = {}): Promise<SecurityGroup[]> {
     return this.findPagedResources(

@@ -39,3 +39,33 @@ export async function waitCondition(
   }
   throw new Error("Resource failed to reach status!");
 }
+
+export function executeWithEnvironment<R>(func: () => R, envKey: string, envValue: string): R {
+  const oldValue = process.env[envKey];
+  process.env[envKey] = envValue;
+  try {
+    return func();
+  } finally {
+    if (oldValue === undefined) {
+      delete process.env[envKey];
+    } else {
+      process.env[envKey] = oldValue;
+    }
+  }
+}
+
+export async function invokeIgnoreError(
+  func: () => Promise<void>,
+  ignoredError: string,
+  message?: string
+): Promise<void> {
+  try {
+    await func();
+  } catch (e) {
+    if (e.name === ignoredError) {
+      console.log(message || e.message);
+      return;
+    }
+    throw e;
+  }
+}
