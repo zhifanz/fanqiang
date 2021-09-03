@@ -5,6 +5,7 @@ import { readCloudInitResource } from "../cloudInit";
 import { TunnelServiceSupport } from "./TunnelServiceSupport";
 import { Netmask } from "netmask";
 import { waitCondition } from "../langUtils";
+import { TunnelProxyEndpoint } from "../../domain/tunnelProxyActionTypes";
 
 const InstanceConstants = {
   ImageId: "aliyun_3_x64_20G_alibase_20210425.vhd",
@@ -18,7 +19,12 @@ const InstanceConstants = {
 export type InstanceConfig = typeof InstanceConstants & { readonly UserData: string; readonly SecurityGroupId: string };
 
 export abstract class AbstractTunnelCreatingService extends TunnelServiceSupport implements TunnelCreatingService {
-  async create(regionId: string, resourceGroupName: string, proxyAddress: AddressInfo): Promise<AddressInfo> {
+  async create(
+    regionId: string,
+    resourceGroupName: string,
+    proxyAddress: string,
+    proxyPort: number
+  ): Promise<TunnelProxyEndpoint> {
     const resourceGroup = await this.ensureResourceGroup(resourceGroupName);
     console.log("Creating VPC...");
     const vpc = await this.operations.createVpc(regionId, {
@@ -28,16 +34,18 @@ export abstract class AbstractTunnelCreatingService extends TunnelServiceSupport
     await waitCondition(
       async () => (await this.operations.describeVpcAttribute(regionId, vpc.VpcId)).Status === "Available"
     );
-    const securityGroup = await this.createNetworkSecurityRules(regionId, resourceGroup.Id, vpc.VpcId, [
-      22,
-      proxyAddress.port,
-    ]);
-    const address = await this.doCreate(regionId, resourceGroup, vpc, {
+    const securityGroup = await this.createNetworkSecurityRules(regionId, resourceGroup.Id, vpc.VpcId, [22, proxyPort]);
+    return await this.doCreate(regionId, resourceGroup, vpc, {
       ...InstanceConstants,
-      UserData: Buffer.from(await cloudInitScript(proxyAddress)).toString("base64"),
+      UserData: Buffer.from(
+        await cloudInitScript({
+          address: proxyAddress,
+          family: "ipv4",
+          port: proxyPort,
+        })
+      ).toString("base64"),
       SecurityGroupId: securityGroup.SecurityGroupId,
     });
-    return { address, family: proxyAddress.family, port: proxyAddress.port };
   }
 
   private async createNetworkSecurityRules(

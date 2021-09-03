@@ -1,23 +1,19 @@
 import { ClashConfigWriter } from "../domain/ClashConfigWriter";
-import { ResourceIndexRepository } from "../domain/ResourceIndexRepository";
+import { ResourceIndexRepository } from "./ResourceIndexRepository";
 import axios, { AxiosInstance } from "axios";
-import { CreateTunnelHandler } from "../domain/CreateTunnelHandler";
 import { AliyunOssCloudStorage } from "./aliyun/AliyunOssCloudStorage";
 import { AliyunCredentials, loadCredentials } from "./aliyun/aliyunCredentials";
 import { AliyunOperations } from "./aliyun/AliyunOperations";
 import { AwsS3CloudStorage } from "./aws/AwsS3CloudStorage";
-import { DestroyHandler } from "../domain/DestroyHandler";
 import { AwsSdkClientFactory } from "./aws/AwsSdkClientFactory";
 import { LightsailOperations } from "./aws/LightsailOperations";
 import { LightsailClient } from "@aws-sdk/client-lightsail";
 import { S3Client } from "@aws-sdk/client-s3";
 import exitHook from "async-exit-hook";
-import { CreateProxyHandler } from "../domain/CreateProxyHandler";
 import { IAMClient } from "@aws-sdk/client-iam";
 import { accountName } from "./aws/awsUtils";
-import { DefaultDestroyHandler } from "./DefaultDestroyHandler";
-import { AwsProxyCreatingService } from "./aws/AwsProxyCreatingService";
-import { DefaultCreateTunnelHandler } from "./aliyun/DefaultCreateTunnelHandler";
+import { CreateTunnelProxyFunction, DestroyTunnelProxyFunction } from "../domain/tunnelProxyActionTypes";
+import { createTunnelProxy, destroyTunnelProxy } from "./tunnelProxyActions";
 
 export const APP_NAME = "fanqiang";
 
@@ -41,10 +37,8 @@ export interface Configuration {
   clashConfigWriter: ClashConfigWriter;
 
   resourceIndexRepository?: ResourceIndexRepository;
-  destroyHandler?: DestroyHandler;
-
-  createProxy?: CreateProxyHandler;
-  createTunnel?: CreateTunnelHandler;
+  createTunnelProxy?: CreateTunnelProxyFunction;
+  destroyTunnelProxy?: DestroyTunnelProxyFunction;
 }
 
 let configuration: Configuration | undefined;
@@ -87,14 +81,8 @@ async function createConfiguration(): Promise<Configuration> {
   );
   await postProcessAwsConfiguration(localConfig.cloudServiceProviders.aws);
   localConfig.resourceIndexRepository = new ResourceIndexRepository(localConfig.httpClient);
-  localConfig.destroyHandler = new DefaultDestroyHandler(
-    localConfig.cloudServiceProviders.aliyun.operations,
-    localConfig.cloudServiceProviders.aliyun.cloudStorage,
-    localConfig.cloudServiceProviders.aws.lightsailOperations,
-    localConfig.cloudServiceProviders.aws.cloudStorage
-  );
-  localConfig.createProxy = new AwsProxyCreatingService(localConfig.cloudServiceProviders.aws.lightsailOperations);
-  localConfig.createTunnel = new DefaultCreateTunnelHandler(localConfig.cloudServiceProviders.aliyun.operations);
+  localConfig.createTunnelProxy = (request) => createTunnelProxy(request, localConfig);
+  localConfig.destroyTunnelProxy = () => destroyTunnelProxy(localConfig);
 
   return localConfig;
 }

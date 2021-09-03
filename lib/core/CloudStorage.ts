@@ -1,4 +1,4 @@
-export type CloudSaveFunc = (key: string, value: string) => Promise<string>;
+export type CloudSaveFunction = (key: string, value: string) => Promise<string>;
 export type DestroyCloudStorageFunc = () => Promise<void>;
 
 export interface CloudStorage {
@@ -6,7 +6,7 @@ export interface CloudStorage {
   putObject(region: string, objectKey: string, content: string): Promise<string>;
 }
 
-export function getCloudSave(region: string, cloudStorage: CloudStorage): CloudSaveFunc {
+export function getCloudSave(region: string, cloudStorage: CloudStorage): CloudSaveFunction {
   return (key, value) => cloudStorage.putObject(region, key, value);
 }
 

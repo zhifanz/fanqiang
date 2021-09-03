@@ -10,7 +10,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { invokeIgnoreError, nonNullArray, Strict } from "../langUtils";
-import { CloudStorage } from "../../domain/CloudStorage";
+import { CloudStorage } from "../CloudStorage";
 import { AwsSdkClientFactory } from "./AwsSdkClientFactory";
 
 export class AwsS3CloudStorage implements CloudStorage {

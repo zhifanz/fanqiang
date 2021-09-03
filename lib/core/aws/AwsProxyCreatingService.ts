@@ -1,13 +1,12 @@
 import { Bundle, IpAddressType, NetworkProtocol } from "@aws-sdk/client-lightsail";
 import { readCloudInitResource } from "../cloudInit";
-import { TunnelProxyEndpoints } from "../../domain/TunnelProxyEndpoints";
 import { waitCondition } from "../langUtils";
 import { ProxyServiceSupport } from "./ProxyServiceSupport";
 import { randomBytes } from "crypto";
-import { CreateProxyHandler } from "../../domain/CreateProxyHandler";
+import { TunnelProxyEndpoint } from "../../domain/tunnelProxyActionTypes";
 
-export class AwsProxyCreatingService extends ProxyServiceSupport implements CreateProxyHandler {
-  async create(region: string, instanceName: string, port: number): Promise<TunnelProxyEndpoints> {
+export class AwsProxyCreatingService extends ProxyServiceSupport {
+  async create(region: string, instanceName: string, port: number): Promise<TunnelProxyEndpoint> {
     const config = { encryptionAlgorithm: "aes-256-gcm", port, password: randomBytes(20).toString("base64") };
     await this.operations.CreateInstances(region, {
       availabilityZone: await this.determineZone(region),
@@ -27,10 +26,7 @@ export class AwsProxyCreatingService extends ProxyServiceSupport implements Crea
 
     const instance = await this.operations.GetInstance(region, { instanceName });
 
-    return {
-      address: <string>instance.publicIpAddress,
-      ...config,
-    };
+    return <string>instance.publicIpAddress;
   }
 
   private async determineBundle(region: string): Promise<string> {

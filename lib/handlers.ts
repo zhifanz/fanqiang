@@ -1,46 +1,40 @@
-import { APP_NAME, loadConfiguration } from "./core/Configuration";
-import { ResourceIndex } from "./domain/ResourceIndexRepository";
-import { CloudSaveFunc, getCloudSave } from "./domain/CloudStorage";
+import { loadConfiguration } from "./core/Configuration";
+import { getCloudSave } from "./core/CloudStorage";
+import { TunnelProxyConnectionInfo, TunnelProxyCreatingRequest } from "./domain/tunnelProxyActionTypes";
+import { randomBytes } from "crypto";
 
 export async function create(
   proxyRegion: string,
   clashConfigRemote: boolean,
-  tunnelConfig?: { region: string; autoProvisioning: boolean }
+  tunnelConfig?: TunnelProxyCreatingRequest["tunnel"]
 ): Promise<void> {
   const configuration = await loadConfiguration();
-  const resourceIndex: ResourceIndex = { proxy: { region: proxyRegion, instanceName: APP_NAME } };
-  const endpoints = await configuration.createProxy.create(
-    resourceIndex.proxy.region,
-    resourceIndex.proxy.instanceName,
-    8388
-  );
-  if (tunnelConfig) {
-    const resourceGroup = APP_NAME;
-    const tunnelAddressInfo = await configuration.createTunnel.execute(
-      tunnelConfig.region,
-      resourceGroup,
-      endpoints,
-      tunnelConfig.autoProvisioning
-    );
-    endpoints.address = tunnelAddressInfo.address;
-    resourceIndex.tunnel = { region: tunnelConfig.region, resourceGroup };
-  }
-  let clashConfigUrl: string | undefined;
-  if (clashConfigRemote) {
-    const cloudSave: CloudSaveFunc = resourceIndex.tunnel
-      ? getCloudSave(resourceIndex.tunnel.region, configuration.cloudServiceProviders.aliyun.cloudStorage)
-      : getCloudSave(resourceIndex.proxy.region, configuration.cloudServiceProviders.aws.cloudStorage);
-    await configuration.resourceIndexRepository.save(resourceIndex, cloudSave);
-    clashConfigUrl = await configuration.clashConfigWriter.writeLink(endpoints, cloudSave);
-  } else {
-    await configuration.resourceIndexRepository.save(resourceIndex);
-    clashConfigUrl = await configuration.clashConfigWriter.writeLocal(endpoints);
-  }
+  const defaultShadowsockConfig = {
+    port: 8388,
+    encryptionAlgorithm: "aes-256-gcm",
+    password: randomBytes(20).toString("base64"),
+  };
+  const endpoint = await configuration.createTunnelProxy({
+    ...defaultShadowsockConfig,
+    enableCloudStorage: clashConfigRemote,
+    proxyRegion: proxyRegion,
+    tunnel: tunnelConfig,
+  });
+  const connectionInfo: TunnelProxyConnectionInfo = { ...defaultShadowsockConfig, address: endpoint };
+  const clashConfigUrl = clashConfigRemote
+    ? await configuration.clashConfigWriter.writeLink(
+        connectionInfo,
+        tunnelConfig
+          ? getCloudSave(tunnelConfig.region, configuration.cloudServiceProviders.aliyun.cloudStorage)
+          : getCloudSave(proxyRegion, configuration.cloudServiceProviders.aws.cloudStorage)
+      )
+    : await configuration.clashConfigWriter.writeLocal(connectionInfo);
+
   console.log("Saved Clash config to: " + clashConfigUrl);
 }
 
-export async function destroy(url?: string): Promise<void> {
+export async function destroy(): Promise<void> {
   const configuration = await loadConfiguration();
-  await configuration.destroyHandler.execute(await configuration.resourceIndexRepository.load(url));
+  await configuration.destroyTunnelProxy();
   console.log("Destroy command run success!");
 }

@@ -1,4 +1,4 @@
-import { CloudStorage } from "../../domain/CloudStorage";
+import { CloudStorage } from "../CloudStorage";
 import OSS from "ali-oss";
 import { AliyunCredentials } from "./aliyunCredentials";
 import { invokeIgnoreError } from "../langUtils";

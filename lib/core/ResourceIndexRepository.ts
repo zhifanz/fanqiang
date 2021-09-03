@@ -1,7 +1,7 @@
-import { CloudSaveFunc } from "./CloudStorage";
+import { CloudSaveFunction } from "./CloudStorage";
 import { AxiosInstance } from "axios";
 import * as fs from "fs-extra";
-import { APP_NAME } from "../core/Configuration";
+import { APP_NAME } from "./Configuration";
 import path from "path";
 import * as os from "os";
 
@@ -24,7 +24,7 @@ export class ResourceIndexRepository {
     return (await this.httpClient.get(<string>url)).data;
   }
 
-  async save(resourceIndex: ResourceIndex, cloudSave?: CloudSaveFunc): Promise<void> {
+  async save(resourceIndex: ResourceIndex, cloudSave?: CloudSaveFunction): Promise<void> {
     await fs.ensureFile(indexFilePath());
     if (!cloudSave) {
       await fs.writeJson(indexFilePath(), resourceIndex);
