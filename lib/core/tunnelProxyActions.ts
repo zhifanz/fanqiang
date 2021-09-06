@@ -1,4 +1,4 @@
-import { TunnelProxyCreatingRequest, TunnelProxyEndpoint } from "../domain/tunnelProxyActionTypes";
+import { TunnelProxyCreatingRequest, TunnelProxyCreatingResponse } from "../domain/tunnelProxyActionTypes";
 import { APP_NAME, Configuration } from "./Configuration";
 import { TunnelDestroyingService } from "./aliyun/TunnelDestroyingService";
 import { AwsProxyDestroyingService } from "./aws/AwsProxyDestroyingService";
@@ -6,11 +6,12 @@ import { ResourceIndex } from "./ResourceIndexRepository";
 import { AwsProxyCreatingService } from "./aws/AwsProxyCreatingService";
 import { DefaultCreateTunnelHandler } from "./aliyun/DefaultCreateTunnelHandler";
 import { getCloudSave } from "./CloudStorage";
+import { CloudSaveFunction } from "../domain/cloudSave";
 
 export async function createTunnelProxy(
   request: TunnelProxyCreatingRequest,
   configuration: Configuration
-): Promise<TunnelProxyEndpoint> {
+): Promise<TunnelProxyCreatingResponse> {
   const resourceIndex: ResourceIndex = { proxy: { region: request.proxyRegion, instanceName: APP_NAME } };
 
   let endpoint = await new AwsProxyCreatingService(configuration.cloudServiceProviders.aws.lightsailOperations).create(
@@ -28,17 +29,16 @@ export async function createTunnelProxy(
       request.tunnel.autoProvisioning
     );
   }
+  let cloudSave: CloudSaveFunction | undefined;
   if (request.enableCloudStorage) {
-    await configuration.resourceIndexRepository.save(
-      resourceIndex,
-      request.tunnel
-        ? getCloudSave(request.tunnel.region, configuration.cloudServiceProviders.aliyun.cloudStorage)
-        : getCloudSave(request.proxyRegion, configuration.cloudServiceProviders.aws.cloudStorage)
-    );
+    cloudSave = request.tunnel
+      ? getCloudSave(request.tunnel.region, configuration.cloudServiceProviders.aliyun.cloudStorage)
+      : getCloudSave(request.proxyRegion, configuration.cloudServiceProviders.aws.cloudStorage);
+    await configuration.resourceIndexRepository.save(resourceIndex, cloudSave);
   } else {
     await configuration.resourceIndexRepository.save(resourceIndex);
   }
-  return endpoint;
+  return { endpoint, cloudSave };
 }
 
 export async function destroyTunnelProxy(configuration: Configuration): Promise<void> {

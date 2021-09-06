@@ -1,9 +1,9 @@
-import { CloudSaveFunction } from "../core/CloudStorage";
 import * as fs from "fs-extra";
 import yaml from "yaml";
 import path from "path";
 import * as os from "os";
 import { TunnelProxyConnectionInfo } from "./tunnelProxyActionTypes";
+import { CloudSaveFunction } from "./cloudSave";
 
 export class ClashConfigWriter {
   async writeLocal(endpoints: TunnelProxyConnectionInfo): Promise<string> {

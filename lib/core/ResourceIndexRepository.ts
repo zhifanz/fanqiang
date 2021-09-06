@@ -1,9 +1,9 @@
-import { CloudSaveFunction } from "./CloudStorage";
 import { AxiosInstance } from "axios";
 import * as fs from "fs-extra";
 import { APP_NAME } from "./Configuration";
 import path from "path";
 import * as os from "os";
+import { CloudSaveFunction } from "../domain/cloudSave";
 
 export type ResourceIndex = {
   proxy: { region: string; instanceName: string };

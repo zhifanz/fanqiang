@@ -3,10 +3,9 @@ import { readCloudInitResource } from "../cloudInit";
 import { waitCondition } from "../langUtils";
 import { ProxyServiceSupport } from "./ProxyServiceSupport";
 import { randomBytes } from "crypto";
-import { TunnelProxyEndpoint } from "../../domain/tunnelProxyActionTypes";
 
 export class AwsProxyCreatingService extends ProxyServiceSupport {
-  async create(region: string, instanceName: string, port: number): Promise<TunnelProxyEndpoint> {
+  async create(region: string, instanceName: string, port: number): Promise<string> {
     const config = { encryptionAlgorithm: "aes-256-gcm", port, password: randomBytes(20).toString("base64") };
     await this.operations.CreateInstances(region, {
       availabilityZone: await this.determineZone(region),

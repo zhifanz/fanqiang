@@ -1,4 +1,5 @@
-export type CloudSaveFunction = (key: string, value: string) => Promise<string>;
+import { CloudSaveFunction } from "../domain/cloudSave";
+
 export type DestroyCloudStorageFunc = () => Promise<void>;
 
 export interface CloudStorage {

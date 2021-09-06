@@ -2,7 +2,6 @@ import AutoProvisioningTunnelCreatingService from "./AutoProvisioningTunnelCreat
 import PlainEcsTunnelCreatingService from "./PlainEcsTunnelCreatingService";
 import { TunnelCreatingService } from "./TunnelCreatingService";
 import { AliyunOperations } from "./AliyunOperations";
-import { TunnelProxyEndpoint } from "../../domain/tunnelProxyActionTypes";
 
 export class DefaultCreateTunnelHandler {
   constructor(private readonly operations: AliyunOperations) {}
@@ -13,7 +12,7 @@ export class DefaultCreateTunnelHandler {
     proxyAddress: string,
     proxyPort: number,
     autoProvisioning: boolean
-  ): Promise<TunnelProxyEndpoint> {
+  ): Promise<string> {
     console.log(`Creating tunnel infrastructures for region [${region}]...`);
 
     const serviceConstructor = autoProvisioning ? AutoProvisioningTunnelCreatingService : PlainEcsTunnelCreatingService;

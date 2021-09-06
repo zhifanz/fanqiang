@@ -5,7 +5,6 @@ import { readCloudInitResource } from "../cloudInit";
 import { TunnelServiceSupport } from "./TunnelServiceSupport";
 import { Netmask } from "netmask";
 import { waitCondition } from "../langUtils";
-import { TunnelProxyEndpoint } from "../../domain/tunnelProxyActionTypes";
 
 const InstanceConstants = {
   ImageId: "aliyun_3_x64_20G_alibase_20210425.vhd",
@@ -19,12 +18,7 @@ const InstanceConstants = {
 export type InstanceConfig = typeof InstanceConstants & { readonly UserData: string; readonly SecurityGroupId: string };
 
 export abstract class AbstractTunnelCreatingService extends TunnelServiceSupport implements TunnelCreatingService {
-  async create(
-    regionId: string,
-    resourceGroupName: string,
-    proxyAddress: string,
-    proxyPort: number
-  ): Promise<TunnelProxyEndpoint> {
+  async create(regionId: string, resourceGroupName: string, proxyAddress: string, proxyPort: number): Promise<string> {
     const resourceGroup = await this.ensureResourceGroup(resourceGroupName);
     console.log("Creating VPC...");
     const vpc = await this.operations.createVpc(regionId, {

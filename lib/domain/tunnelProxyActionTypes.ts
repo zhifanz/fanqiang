@@ -1,3 +1,5 @@
+import { CloudSaveFunction } from "./cloudSave";
+
 export type TunnelProxyCreatingRequest = Pick<
   TunnelProxyConnectionInfo,
   "port" | "encryptionAlgorithm" | "password"
@@ -14,8 +16,8 @@ export type TunnelProxyConnectionInfo = {
   password: string;
 };
 
-export type TunnelProxyEndpoint = string;
+export type TunnelProxyCreatingResponse = { endpoint: string; cloudSave?: CloudSaveFunction };
 
-export type CreateTunnelProxyFunction = (request: TunnelProxyCreatingRequest) => Promise<TunnelProxyEndpoint>;
+export type CreateTunnelProxyFunction = (request: TunnelProxyCreatingRequest) => Promise<TunnelProxyCreatingResponse>;
 
 export type DestroyTunnelProxyFunction = () => Promise<void>;
