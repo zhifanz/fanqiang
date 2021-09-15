@@ -29,13 +29,8 @@ Commands:
 Options:
   --region         AWS lightsail region for proxy deployment
                                                  [string] [default: "us-east-1"]
-  --tunnel-region  Aliyun region for tunnel deployment, for example: cn-shanghai
-                                                                        [string]
-  --tunnel-arch    Deployment architecture for tunnel infrastructures
-                     [string] [choices: "PlainEcs", "AutoProvisioning"(default)]
-  --output         Path for clash config file, only applicable for create
-                   command
-                         [string] [default: "$HOME/.config/clash/fanqiang.yaml"]
+  --tunnel-region  Aliyun region for tunnel deployment
+                                                 [string] [default: "cn-shanghai"]
   --help           Show help                                           [boolean]
   --version        Show version number                                 [boolean]
 ```
@@ -62,15 +57,22 @@ Refer to [AWS SDK documentation][3] for more details on how to set up an AWS cre
 
 ## Setup Credentials for Aliyun Services
 
-You need to configure an Aliyun RAM user on a local machine if you want to use --tunnelRegion option. So far, this tool
-supports reading credentials from <code>$HOME/.aliyun/credentials</code>:
+You need to configure an Aliyun RAM user on a local machine if you want to use --tunnel-region option. So far, this tool
+supports reading credentials from <code>$HOME/.alibabacloud/credentials</code>:
 
-- The credentials file on Linux, Unix, and macOS: ~/.aliyun/credentials
-- The credentials file on Windows: C:\Users\USER_NAME\.aliyun\credentials
+- The credentials file on Linux, Unix, and macOS: ~/.alibabacloud/credentials
+- The credentials file on Windows: C:\Users\USER_NAME\.alibabacloud\credentials
 
 An example of credentials file:
 
 ```
-accessKeyId=<YOUR_ACCESS_KEY_ID>
-accessKeySecret=<YOUR_SECRET_ACCESS_KEY>
+[default]
+enable = true
+type = access_key
+access_key_id = <YOUR_ACCESS_KEY_ID>
+access_key_secret = <YOUR_ACCESS_KEY_SECRET>
 ```
+
+Refer to [Aliyun SDK documentation][4] for more details on how to set up an Aliyun credentials file.
+
+[4]: https://help.aliyun.com/document_detail/113296.html

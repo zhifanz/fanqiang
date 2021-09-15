@@ -1,7 +1,7 @@
 import Credential from "@alicloud/credentials";
 import path from "path";
 import * as os from "os";
-import { executeWithEnvironment } from "../langUtils";
+import { executeWithEnvironment } from "./langUtils";
 
 export type AliyunCredentials = { accessKeyId: string; accessKeySecret: string };
 
@@ -20,4 +20,11 @@ export function loadCredentials(): Promise<AliyunCredentials> {
     "ALIBABA_CLOUD_CREDENTIALS_FILE",
     path.join(os.homedir(), ".alibabacloud", "credentials")
   );
+}
+
+export function asEnvironmentVariables(credentials: AliyunCredentials): Record<string, string> {
+  return {
+    ALICLOUD_ACCESS_KEY: credentials.accessKeyId,
+    ALICLOUD_SECRET_KEY: credentials.accessKeySecret,
+  };
 }

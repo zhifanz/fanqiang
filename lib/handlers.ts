@@ -1,34 +1,28 @@
 import { loadConfiguration } from "./core/Configuration";
-import { TunnelProxyConnectionInfo, TunnelProxyCreatingRequest } from "./domain/tunnelProxyActionTypes";
 import { randomBytes } from "crypto";
+import { generateConfigFrom } from "./domain/Clash";
 
-export async function create(
-  proxyRegion: string,
-  clashConfigRemote: boolean,
-  tunnelConfig?: TunnelProxyCreatingRequest["tunnel"]
-): Promise<void> {
+export async function create(proxyRegion: string, tunnelRegion: string): Promise<void> {
   const configuration = await loadConfiguration();
-  const defaultShadowsockConfig = {
+
+  const request = {
+    proxyRegion,
+    tunnelRegion,
     port: 8388,
     encryptionAlgorithm: "aes-256-gcm",
     password: randomBytes(20).toString("base64"),
   };
-  const response = await configuration.createTunnelProxy({
-    ...defaultShadowsockConfig,
-    enableCloudStorage: clashConfigRemote,
-    proxyRegion: proxyRegion,
-    tunnel: tunnelConfig,
-  });
-  const connectionInfo: TunnelProxyConnectionInfo = { ...defaultShadowsockConfig, address: response.endpoint };
-  const clashConfigUrl = clashConfigRemote
-    ? await configuration.clashConfigWriter.writeLink(connectionInfo, response.cloudSave)
-    : await configuration.clashConfigWriter.writeLocal(connectionInfo);
+  const result = await configuration.tunnelProxyOperations.create(request);
 
+  const clashConfigUrl = await result.bucket.save(
+    "clash/config.yaml",
+    generateConfigFrom({ ...request, address: result.address })
+  );
   console.log("Saved Clash config to: " + clashConfigUrl);
 }
 
 export async function destroy(): Promise<void> {
   const configuration = await loadConfiguration();
-  await configuration.destroyTunnelProxy();
-  console.log("Destroy command run success!");
+  await configuration.tunnelProxyOperations.destroy();
+  console.log("Successfully destroyed tunnel proxy infrastructures!");
 }
