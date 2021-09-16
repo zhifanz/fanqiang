@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/zhifanz/fanqiang/compare/v1.4.1...v2.0.0) (2021-09-16)
+
+
+### Code Refactoring
+
+* use terraform to create or destroy infrastructures ([8fd0e2d](https://github.com/zhifanz/fanqiang/commit/8fd0e2d0ace10a2c761e2d489677990458a1c4e0))
+
+
+### BREAKING CHANGES
+
+* remove options for deploying tunnel infrastructures
+
 ## [1.4.1](https://github.com/zhifanz/fanqiang/compare/v1.4.0...v1.4.1) (2021-08-27)
 
 
