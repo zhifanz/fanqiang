@@ -59,6 +59,7 @@
   "dependencies": {
     "@alicloud/credentials": "^2.1.1",
     "@aws-sdk/client-s3": "^3.27.0",
+    "@aws-sdk/node-config-provider": "^3.29.0",
     "dotenv": "^10.0.0",
     "fs-extra": "^10.0.0",
     "lodash": "^4.17.21",
