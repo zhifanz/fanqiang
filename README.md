@@ -43,7 +43,7 @@ You need to configure an AWS IAM user on the local machine before running any co
 supports reading AWS credentials from <code>Shared Credentials File</code>:
 
 - The shared credentials file on Linux, Unix, and macOS: ~/.aws/credentials
-- The shared credentials file on Windows: C:\Users\USER_NAME\.aws\credentials
+- The shared credentials file on Windows: C:\Users\USER_NAME\\.aws\credentials
 
 An example of credentials file:
 
@@ -63,7 +63,7 @@ You need to configure an Aliyun RAM user on a local machine if you want to use -
 supports reading credentials from <code>$HOME/.alibabacloud/credentials</code>:
 
 - The credentials file on Linux, Unix, and macOS: ~/.alibabacloud/credentials
-- The credentials file on Windows: C:\Users\USER_NAME\.alibabacloud\credentials
+- The credentials file on Windows: C:\Users\USER_NAME\\.alibabacloud\credentials
 
 An example of credentials file:
 
