@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/zhifanz/fanqiang/compare/v2.0.0...v2.0.1) (2021-09-17)
+
+
+### Bug Fixes
+
+* add extra step to install nginx stream module on ecs instance ([1376919](https://github.com/zhifanz/fanqiang/commit/1376919aab17239d5565fa3407d20124171ce175))
+
 # [2.0.0](https://github.com/zhifanz/fanqiang/compare/v1.4.1...v2.0.0) (2021-09-16)
 
 
