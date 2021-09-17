@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/zhifanz/fanqiang/compare/v2.1.0...v2.1.1) (2021-09-17)
+
+
+### Bug Fixes
+
+* missing terraform folder in npm package ([69a7064](https://github.com/zhifanz/fanqiang/commit/69a706497b82e9199fb8e8c16a2eb7a85b83942c))
+
 # [2.1.0](https://github.com/zhifanz/fanqiang/compare/v2.0.1...v2.1.0) (2021-09-17)
 
 
