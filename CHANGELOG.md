@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/zhifanz/fanqiang/compare/v2.0.1...v2.1.0) (2021-09-17)
+
+
+### Features
+
+* provide option for specifying bucket name ([bf9d6b9](https://github.com/zhifanz/fanqiang/commit/bf9d6b942444c9c259bf62788d37c75f5c8de32c))
+
 ## [2.0.1](https://github.com/zhifanz/fanqiang/compare/v2.0.0...v2.0.1) (2021-09-17)
 
 
