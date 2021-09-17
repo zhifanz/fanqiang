@@ -19,7 +19,7 @@ provider "alicloud" {
 
 locals {
   instance_type = "ecs.t5-lc2m1.nano"
-  image_id = "aliyun_3_x64_20G_alibase_20210425.vhd"
+  image_id = "aliyun_2_1903_x64_20G_alibase_20210726.vhd"
   internet_max_bandwidth_out = 100
   max_price_per_hour = "0.05"
 }
