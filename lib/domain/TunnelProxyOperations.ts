@@ -1,4 +1,4 @@
-import { Bucket } from "./CloudStorage";
+import { CloudStorage } from "./CloudStorage";
 
 export interface TunnelProxyOperations {
   create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult>;
@@ -9,6 +9,7 @@ export interface TunnelProxyOperations {
 export type TunnelProxyCreatingRequest = ProxyOptions & {
   proxyRegion: string;
   tunnelRegion: string;
+  bucket: string;
 };
 export type ProxyOptions = {
   port: number;
@@ -16,4 +17,4 @@ export type ProxyOptions = {
   password: string;
 };
 
-export type TunnelProxyCreatingResult = { address: string; bucket: Bucket };
+export type TunnelProxyCreatingResult = { address: string; cloudStorage: CloudStorage };

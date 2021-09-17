@@ -9,10 +9,14 @@ RAM_ROLE_NAME=${ram_role_name}
 aliyun configure set --region $REGION --mode EcsRamRole --ram-role-name $RAM_ROLE_NAME
 aliyun --endpoint "vpc-vpc.$REGION.aliyuncs.com" vpc UnassociateEipAddress --AllocationId $ELASTIC_IP_ALLOCATION_ID || true
 aliyun --endpoint "vpc-vpc.$REGION.aliyuncs.com" vpc AssociateEipAddress --AllocationId $ELASTIC_IP_ALLOCATION_ID --InstanceId "i-$${HOSTNAME: 2: 20}"
+echo "waiting for eip to be in effect..."
+sleep 5
 
-yum install nginx -y
-yum install nginx-all-modules -y
+echo "installing nginx..."
+yum install nginx -y &>> ~/cloud-init.log
+yum install nginx-all-modules -y &>> ~/cloud-init.log
 
+echo "setup nginx config..."
 cat > /etc/nginx/nginx.conf <<EOF
 user nginx;
 worker_processes auto;
@@ -33,4 +37,5 @@ stream {
 }
 EOF
 
+echo "start nginx service..."
 systemctl start nginx.service

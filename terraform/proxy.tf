@@ -20,6 +20,12 @@ resource "aws_lightsail_instance_public_ports" "default" {
   }
 }
 
+resource "aws_s3_bucket" "default" {
+  bucket = var.bucket
+  acl = "public-read"
+  force_destroy = true
+}
+
 data "aws_availability_zones" "default" {
   state = "available"
 }

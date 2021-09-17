@@ -1,39 +1,46 @@
 import * as child_process from "child_process";
-import * as tmp from "tmp";
-import * as fs from "fs-extra";
-import * as path from "path";
-import { AliyunCredentials, asEnvironmentVariables } from "./aliyunCredentials";
+import { AliyunCredentials, asTerraformEnvironmentVariables } from "./aliyunCredentials";
 import * as util from "util";
 import { TunnelProxyCreatingRequest } from "../domain/TunnelProxyOperations";
 import * as process from "process";
+import * as fs from "fs-extra";
+import * as path from "path";
 
-export function apply(
+export async function apply(
   request: TunnelProxyCreatingRequest,
-  backend: string,
+  workdir: string,
   credentials: AliyunCredentials
-): Promise<string> {
-  return runInWorkdir(async (workdir) => {
-    await replaceTemplate(path.join(workdir, "backend.tf"), { "${bucket}": backend, "${region}": request.proxyRegion });
-    await init(workdir, credentials);
-    await provisioning(["apply", ...getBaseArgs(request, backend)], workdir, asEnvironmentVariables(credentials));
-    return await inspecting(["output", "-raw", "address"], workdir);
-  });
+): Promise<{ address: string; bucketDomain: string }> {
+  await init(request, workdir);
+  await provisioning(["apply", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
+  return {
+    address: await inspecting(["output", "-raw", "address"], workdir),
+    bucketDomain: await inspecting(["output", "-raw", "bucket_domain_name"], workdir),
+  };
 }
 
-export function destroy(
-  request: TunnelProxyCreatingRequest,
-  backend: string,
-  credentials: AliyunCredentials
-): Promise<void> {
-  return runInWorkdir(async (workdir) => {
-    await replaceTemplate(path.join(workdir, "backend.tf"), { "${bucket}": backend, "${region}": request.proxyRegion });
-    await init(workdir, credentials);
-    await provisioning(["destroy", ...getBaseArgs(request, backend)], workdir, asEnvironmentVariables(credentials));
-  });
+export async function destroy(workdir: string, credentials: AliyunCredentials): Promise<void> {
+  if (!(await fs.pathExists(workdir))) {
+    console.log("Tunnel proxy never created, nothing to destroy");
+    return;
+  }
+  await provisioning(["destroy", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
 }
 
-async function init(workdir: string, credentials: AliyunCredentials): Promise<void> {
-  await provisioning(["init"], workdir, asEnvironmentVariables(credentials));
+async function init(request: TunnelProxyCreatingRequest, workdir: string): Promise<void> {
+  await fs.ensureDir(workdir);
+  await fs.writeJson(path.join(workdir, "terraform.tfvars.json"), {
+    proxy_region: request.proxyRegion,
+    tunnel_region: request.tunnelRegion,
+    port: request.port,
+    password: request.password,
+    encryption_algorithm: request.encryptionAlgorithm,
+    bucket: request.bucket,
+  });
+  if (!(await fs.pathExists(path.join(workdir, ".terraform")))) {
+    await fs.copy(path.resolve(__dirname, "..", "..", "terraform"), workdir, { overwrite: true, recursive: true });
+    await provisioning(["init"], workdir);
+  }
 }
 
 async function provisioning(args: string[], cwd: string, customEnv: Record<string, string> = {}): Promise<void> {
@@ -52,48 +59,4 @@ async function provisioning(args: string[], cwd: string, customEnv: Record<strin
 
 async function inspecting(args: string[], cwd: string): Promise<string> {
   return (await util.promisify(child_process.execFile)("terraform", args, { cwd })).stdout;
-}
-
-async function runInWorkdir<R>(executeFunc: (workdir: string) => Promise<R>): Promise<R> {
-  const workdir = await prepareWorkdir();
-  console.log("Copy terraform configuration to: " + workdir);
-  try {
-    return await executeFunc(workdir);
-  } finally {
-    await fs.rm(workdir, { force: true, recursive: true });
-  }
-}
-
-async function prepareWorkdir(): Promise<string> {
-  const workdir = tmp.dirSync({ keep: false, unsafeCleanup: true }).name;
-  await fs.copy(path.join(__dirname, "..", "..", "terraform"), workdir, { overwrite: true, recursive: true });
-  return workdir;
-}
-
-async function replaceTemplate(file: string, params: Record<string, string>): Promise<void> {
-  const template = file + ".template";
-  let content = await fs.readFile(template, "utf8");
-  for (const k in params) {
-    content = content.replace(k, params[k]);
-  }
-  await fs.writeFile(file, content);
-  await fs.rm(template, { force: true });
-}
-
-function getBaseArgs(request: TunnelProxyCreatingRequest, backend: string): string[] {
-  return [
-    "-auto-approve",
-    "-var",
-    `proxy_region=${request.proxyRegion}`,
-    "-var",
-    `tunnel_region=${request.tunnelRegion}`,
-    "-var",
-    `port=${request.port}`,
-    "-var",
-    `password=${request.password}`,
-    "-var",
-    `encryption_algorithm=${request.encryptionAlgorithm}`,
-    "-var",
-    `bucket=${backend}`,
-  ];
 }

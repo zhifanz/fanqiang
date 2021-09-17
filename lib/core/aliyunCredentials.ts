@@ -22,7 +22,7 @@ export function loadCredentials(): Promise<AliyunCredentials> {
   );
 }
 
-export function asEnvironmentVariables(credentials: AliyunCredentials): Record<string, string> {
+export function asTerraformEnvironmentVariables(credentials: AliyunCredentials): Record<string, string> {
   return {
     ALICLOUD_ACCESS_KEY: credentials.accessKeyId,
     ALICLOUD_SECRET_KEY: credentials.accessKeySecret,

@@ -2,6 +2,7 @@
 
 import yargs from "yargs";
 import handlers from "../index";
+import * as os from "os";
 
 async function main(): Promise<void> {
   await yargs(process.argv.slice(2))
@@ -17,6 +18,11 @@ async function main(): Promise<void> {
         default: "cn-shanghai",
         description: "Aliyun region for tunnel deployment",
       },
+      bucket: {
+        type: "string",
+        default: "fanqiang-" + os.userInfo().username,
+        description: "S3 bucket name for storing Clash client config file",
+      },
     })
     .demandCommand(1)
     .strict()
@@ -24,7 +30,7 @@ async function main(): Promise<void> {
       "create",
       "Create new tunnel proxy infrastructures",
       () => void 0,
-      (args) => handlers.create(args.region, args["tunnel-region"])
+      (args) => handlers.create(args.region, args["tunnel-region"], args["bucket"])
     )
     .command("destroy", "Destroy tunnel proxy infrastructures", () => void 0, handlers.destroy)
     .help()

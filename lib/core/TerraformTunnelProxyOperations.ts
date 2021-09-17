@@ -5,39 +5,26 @@ import {
 } from "../domain/TunnelProxyOperations";
 import * as terraform from "./terraform";
 import { Configuration } from "./Configuration";
+import { AwsS3CloudStorage } from "./AwsS3CloudStorage";
+import * as fs from "fs-extra";
 
 export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
   constructor(private readonly configuration: Configuration) {}
 
   async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
-    let storedOptions = await this.configuration.storedOptionsRepository.load();
-    if (storedOptions) {
-      throw new Error("Tunnel proxy already exists!");
-    }
-    const bucket = await this.configuration.cloudStorage.getBucket(request.proxyRegion);
-    storedOptions = {
+    const applyResult = await terraform.apply(
       request,
-      bucket: bucket.name,
-    };
-    const endpointAddress = await terraform.apply(
-      storedOptions.request,
-      storedOptions.bucket,
+      this.configuration.terraformWorkspace,
       this.configuration.aliyun.credentials
     );
-    await this.configuration.storedOptionsRepository.save(storedOptions);
     return {
-      address: endpointAddress,
-      bucket,
+      address: applyResult.address,
+      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucketDomain),
     };
   }
 
   async destroy(): Promise<void> {
-    const storedOptions = await this.configuration.storedOptionsRepository.load();
-    if (!storedOptions) {
-      throw new Error("Tunnel proxy does not exists!");
-    }
-    await terraform.destroy(storedOptions.request, storedOptions.bucket, this.configuration.aliyun.credentials);
-    await this.configuration.cloudStorage.destroy(storedOptions.request.proxyRegion, storedOptions.bucket);
-    await this.configuration.storedOptionsRepository.delete();
+    await terraform.destroy(this.configuration.terraformWorkspace, this.configuration.aliyun.credentials);
+    await fs.rm(this.configuration.terraformWorkspace, { force: true, recursive: true });
   }
 }
