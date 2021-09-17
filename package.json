@@ -23,7 +23,7 @@
   "files": [
     "/bin",
     "/lib",
-    "/cloud-init",
+    "/terraform",
     "index.*"
   ],
   "homepage": "https://github.com/zhifanz/fanqiang#readme",
