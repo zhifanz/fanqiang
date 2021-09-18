@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/zhifanz/fanqiang/compare/v2.1.1...v2.2.0) (2021-09-18)
+
+
+### Features
+
+* apply runnel based proxy for clash client ([3392d31](https://github.com/zhifanz/fanqiang/commit/3392d31254150b295fc74677a752621dac145292))
+
 ## [2.1.1](https://github.com/zhifanz/fanqiang/compare/v2.1.0...v2.1.1) (2021-09-17)
 
 

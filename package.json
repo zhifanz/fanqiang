@@ -1,6 +1,6 @@
 {
   "name": "fanqiang",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Tunnel Proxy Auto Deployment",
   "bin": "./bin/fanqiang.js",
   "scripts": {
