@@ -5,6 +5,7 @@ import { TunnelProxyCreatingRequest } from "../domain/TunnelProxyOperations";
 import * as process from "process";
 import * as fs from "fs-extra";
 import * as path from "path";
+import promiseRetry from "promise-retry";
 
 export async function apply(
   request: TunnelProxyCreatingRequest,
@@ -12,7 +13,7 @@ export async function apply(
   credentials: AliyunCredentials
 ): Promise<{ address: string; bucketDomain: string }> {
   await init(request, workdir);
-  await provisioning(["apply", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
+  await provisioningRetry(["apply", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
   return {
     address: await inspecting(["output", "-raw", "address"], workdir),
     bucketDomain: await inspecting(["output", "-raw", "bucket_domain_name"], workdir),
@@ -24,7 +25,7 @@ export async function destroy(workdir: string, credentials: AliyunCredentials): 
     console.log("Tunnel proxy never created, nothing to destroy");
     return;
   }
-  await provisioning(["destroy", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
+  await provisioningRetry(["destroy", "-auto-approve"], workdir, asTerraformEnvironmentVariables(credentials));
 }
 
 async function init(request: TunnelProxyCreatingRequest, workdir: string): Promise<void> {
@@ -39,11 +40,24 @@ async function init(request: TunnelProxyCreatingRequest, workdir: string): Promi
   });
   if (!(await fs.pathExists(path.join(workdir, ".terraform")))) {
     await fs.copy(path.resolve(__dirname, "..", "..", "terraform"), workdir, { overwrite: true, recursive: true });
-    await provisioning(["init"], workdir);
+    await provisioningRetry(["init"], workdir);
   }
 }
 
-async function provisioning(args: string[], cwd: string, customEnv: Record<string, string> = {}): Promise<void> {
+async function provisioningRetry(args: string[], cwd: string, customEnv: Record<string, string> = {}): Promise<void> {
+  await promiseRetry(
+    async (retry) => {
+      try {
+        await provisioning(args, cwd, customEnv);
+      } catch (error) {
+        retry(error);
+      }
+    },
+    { retries: 3 }
+  );
+}
+
+async function provisioning(args: string[], cwd: string, customEnv: Record<string, string>): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const p = child_process.spawn("terraform", args, { cwd, stdio: "inherit", env: { ...process.env, ...customEnv } });
     p.on("close", (code) => {

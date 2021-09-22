@@ -13,10 +13,13 @@ resource "aws_lightsail_instance" "default" {
 resource "aws_lightsail_instance_public_ports" "default" {
   instance_name = aws_lightsail_instance.default.name
 
-  port_info {
-    protocol  = "tcp"
-    from_port = var.port
-    to_port   = var.port
+  dynamic "port_info" {
+    for_each = [var.port, 22]
+    content {
+      protocol  = "tcp"
+      from_port = port_info.value
+      to_port   = port_info.value
+    }
   }
 }
 

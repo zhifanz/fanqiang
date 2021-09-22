@@ -17,10 +17,11 @@ export function generateConfigFrom(endpoints: TunnelProxyConnectionInfo): string
       enable: true,
       listen: "0.0.0.0:53",
       "enhanced-mode": "redir-host",
+      nameserver: ["223.5.5.5", "119.29.29.29", "114.114.114.114", "tls://dns.rubyfish.cn:853"],
     },
     proxies: [
       {
-        name: "shadowsocks",
+        name: "auto",
         type: "ss",
         server: endpoints.address,
         port: endpoints.port,

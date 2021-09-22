@@ -14,11 +14,12 @@ resource "alicloud_security_group" "default" {
 }
 
 resource "alicloud_security_group_rule" "default" {
+  for_each = toset([tostring(var.port), "22"])
   security_group_id = alicloud_security_group.default.id
   ip_protocol = "tcp"
   type = "ingress"
   cidr_ip = "0.0.0.0/0"
-  port_range = "${var.port}/${var.port}"
+  port_range = "${each.key}/${each.key}"
 }
 
 resource "alicloud_auto_provisioning_group" "default" {
@@ -48,6 +49,7 @@ resource "alicloud_ecs_launch_template" "default" {
   instance_charge_type = "PostPaid"
   instance_type = local.instance_type
   security_group_id = alicloud_security_group.default.id
+  key_pair_name = length(data.alicloud_ecs_key_pairs.default) > 0 ? data.alicloud_ecs_key_pairs.default.names[0] : null
   spot_duration = 0
   spot_strategy = "SpotAsPriceGo"
   ram_role_name = alicloud_ram_role.default.id
@@ -65,6 +67,7 @@ resource "alicloud_ecs_launch_template" "default" {
   }
 }
 
+data "alicloud_ecs_key_pairs" "default" {}
 
 resource "alicloud_ram_role" "default" {
   name = "FangqiangEcsEipAccessRole"
