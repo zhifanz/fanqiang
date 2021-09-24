@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/zhifanz/fanqiang/compare/v2.2.0...v2.2.1) (2021-09-24)
+
+
+### Bug Fixes
+
+* add nameserver for clash dns config ([2867919](https://github.com/zhifanz/fanqiang/commit/2867919f6fb171380b24b53528cfcc31dde7acd8))
+
 # [2.2.0](https://github.com/zhifanz/fanqiang/compare/v2.1.1...v2.2.0) (2021-09-18)
 
 
