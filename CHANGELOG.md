@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/zhifanz/fanqiang/compare/v2.2.1...v2.3.0) (2021-09-24)
+
+
+### Features
+
+* create command will wait until tunnel proxy service is ready ([7c37642](https://github.com/zhifanz/fanqiang/commit/7c376429e34a2a929d5abd6a6531143426cdcf16))
+
 ## [2.2.1](https://github.com/zhifanz/fanqiang/compare/v2.2.0...v2.2.1) (2021-09-24)
 
 
