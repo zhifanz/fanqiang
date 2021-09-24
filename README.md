@@ -33,6 +33,8 @@ Options:
                                                  [string] [default: "us-east-1"]
   --tunnel-region  Aliyun region for tunnel deployment
                                                  [string] [default: "cn-shanghai"]
+  --bucket         AWS S3 bucket name, used to store clash client configuration file
+                                                 [string] [default: "fanqiang-$USER"]
   --help           Show help                                           [boolean]
   --version        Show version number                                 [boolean]
 ```

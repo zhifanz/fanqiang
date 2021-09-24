@@ -45,16 +45,13 @@ async function init(request: TunnelProxyCreatingRequest, workdir: string): Promi
 }
 
 async function provisioningRetry(args: string[], cwd: string, customEnv: Record<string, string> = {}): Promise<void> {
-  await promiseRetry(
-    async (retry) => {
-      try {
-        await provisioning(args, cwd, customEnv);
-      } catch (error) {
-        retry(error);
-      }
-    },
-    { retries: 3 }
-  );
+  await promiseRetry(async (retry) => {
+    try {
+      await provisioning(args, cwd, customEnv);
+    } catch (error) {
+      retry(error);
+    }
+  });
 }
 
 async function provisioning(args: string[], cwd: string, customEnv: Record<string, string>): Promise<void> {
