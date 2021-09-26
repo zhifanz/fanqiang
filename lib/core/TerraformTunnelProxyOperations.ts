@@ -1,24 +1,33 @@
 import {
   TunnelProxyCreatingRequest,
   TunnelProxyCreatingResult,
-  TunnelProxyOperations,
+  TunnelProxyOperations
 } from "../domain/TunnelProxyOperations";
-import * as terraform from "./terraform";
 import { Configuration } from "./Configuration";
 import { AwsS3CloudStorage } from "./AwsS3CloudStorage";
 import * as fs from "fs-extra";
-import * as net from "net";
 import promiseRetry from "promise-retry";
+import { checkServiceAvailable } from "./netUtils";
+import path from "path";
+import Terraform from "./Terraform";
+
+export const TerraformConfigSource = path.resolve(__dirname, "..", "..", "terraform");
 
 export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
-  constructor(private readonly configuration: Configuration) {}
+  constructor(private readonly configuration: Configuration) {
+  }
 
   async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
-    const applyResult = await terraform.apply(
-      request,
-      this.configuration.terraformWorkspace,
-      this.configuration.aliyun.credentials
-    );
+    const terraform = await Terraform.createInstance(this.configuration.credentialsProviders, TerraformConfigSource, this.configuration.terraformWorkspace);
+
+    const applyResult: { address: string; bucket_domain_name: string; } = await terraform.apply({
+      proxy_region: request.proxyRegion,
+      tunnel_region: request.tunnelRegion,
+      port: request.port,
+      password: request.password,
+      encryption_algorithm: request.encryptionAlgorithm,
+      bucket: request.bucket
+    });
     await promiseRetry(async (retry) => {
       try {
         await checkServiceAvailable(request.port, applyResult.address, 2000);
@@ -29,25 +38,14 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
     });
     return {
       address: applyResult.address,
-      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucketDomain),
+      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name)
     };
   }
 
   async destroy(): Promise<void> {
-    await terraform.destroy(this.configuration.terraformWorkspace, this.configuration.aliyun.credentials);
+    const terraform = await Terraform.createInstance(this.configuration.credentialsProviders, TerraformConfigSource, this.configuration.terraformWorkspace);
+    await terraform.destroy();
+    console.log("Removing terraform working directory...");
     await fs.rm(this.configuration.terraformWorkspace, { force: true, recursive: true });
-  }
-}
-
-async function checkServiceAvailable(port: number, host: string, timeout: number): Promise<void> {
-  const socket = net.connect({ port, host, family: 4, timeout });
-  try {
-    await new Promise((resolve, reject) => {
-      socket.once("connect", resolve);
-      socket.once("timeout", () => reject("timeout"));
-      socket.once("error", (err) => reject(err));
-    });
-  } finally {
-    socket.destroy();
   }
 }

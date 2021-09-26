@@ -1,22 +1,23 @@
-import { AliyunCredentials, loadCredentials } from "./aliyunCredentials";
+import { CredentialsProviders, getCredentialsProviders } from "./Credentials";
 import * as path from "path";
 import * as os from "os";
-import { TunnelProxyOperations } from "../domain/TunnelProxyOperations";
+import { ProxyOptions, TunnelProxyOperations } from "../domain/TunnelProxyOperations";
 import { TerraformTunnelProxyOperations } from "./TerraformTunnelProxyOperations";
 
+export const ProxyDefaults: Pick<ProxyOptions, "port" | "encryptionAlgorithm"> = {
+  port: 8388,
+  encryptionAlgorithm: "aes-256-gcm",
+} as const;
+
 export interface Configuration {
-  aliyun: {
-    credentials: AliyunCredentials;
-  };
+  credentialsProviders: CredentialsProviders;
   terraformWorkspace: string;
   tunnelProxyOperations?: TunnelProxyOperations;
 }
 
 export async function loadConfiguration(): Promise<Configuration> {
   const configuration: Configuration = {
-    aliyun: {
-      credentials: await loadCredentials(),
-    },
+    credentialsProviders: await getCredentialsProviders(),
     terraformWorkspace: path.join(os.homedir(), ".fanqiang", "runtime"),
   };
   configuration.tunnelProxyOperations = new TerraformTunnelProxyOperations(configuration);

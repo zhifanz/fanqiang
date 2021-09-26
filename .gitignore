@@ -1,6 +1,19 @@
+build
 .idea
 node_modules
 **/*.d.ts
 **/*.d.ts.map
 **/*.js
 **/*.js.map
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
