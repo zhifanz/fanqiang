@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/zhifanz/fanqiang/compare/v2.3.0...v2.4.0) (2021-10-08)
+
+
+### Features
+
+* user can provide aws and aliyun credentials via command option ([2d097e3](https://github.com/zhifanz/fanqiang/commit/2d097e32c9afc588629d050cc7d3d9f81a830925))
+
 # [2.3.0](https://github.com/zhifanz/fanqiang/compare/v2.2.1...v2.3.0) (2021-09-24)
 
 
