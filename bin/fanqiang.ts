@@ -25,11 +25,11 @@ async function main(): Promise<void> {
       },
       "aws-credentials": {
         type: "string",
-        description: "must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>"
+        description: "Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>"
       },
       "aliyun-credentials": {
         type: "string",
-        description: "must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>"
+        description: "Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>"
       }
     })
     .demandCommand(1)

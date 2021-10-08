@@ -29,14 +29,18 @@ Commands:
   destroy  Destroy tunnel proxy infrastructures
 
 Options:
-  --region         AWS lightsail region for proxy deployment
-                                                 [string] [default: "us-east-1"]
-  --tunnel-region  Aliyun region for tunnel deployment
-                                                 [string] [default: "cn-shanghai"]
-  --bucket         AWS S3 bucket name, used to store clash client configuration file
-                                                 [string] [default: "fanqiang-$USER"]
-  --help           Show help                                           [boolean]
-  --version        Show version number                                 [boolean]
+  --region              AWS lightsail region for proxy deployment
+                                                            [string] [default: "us-east-1"]
+  --tunnel-region       Aliyun region for tunnel deployment
+                                                          [string] [default: "cn-shanghai"]
+  --bucket              AWS S3 bucket name, used to store clash client configuration file
+                                                       [string] [default: "fanqiang-$USER"]
+  --aws-credentials     Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>
+                                                                                   [string]
+  --aliyun-credentials  Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>
+                                                                                   [string]
+  --help                Show help                                                 [boolean]
+  --version             Show version number                                       [boolean]
 ```
 
 ## Setup Credentials for AWS Services
