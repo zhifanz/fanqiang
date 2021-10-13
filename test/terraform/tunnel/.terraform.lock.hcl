@@ -8,11 +8,3 @@ provider "registry.terraform.io/aliyun/alicloud" {
     "h1:Scey9tCLe74XQeG65MnmH1v8qEXIkNXa1Tyr7yEyZWw=",
   ]
 }
-
-provider "registry.terraform.io/hashicorp/aws" {
-  version     = "3.60.0"
-  constraints = "3.60.0"
-  hashes = [
-    "h1:ngyTMQ2Zd+4GGkD3Ekrdnu97F1JzkK3SalbcazAVtlQ=",
-  ]
-}

@@ -5,8 +5,13 @@ import { CredentialsProviders, parseCredentialsToken } from "./core/Credentials"
 
 type StringCredentialsProviders = Record<keyof CredentialsProviders, string>;
 
-export async function create(proxyRegion: string, tunnelRegion: string, bucket: string, credentials?: StringCredentialsProviders): Promise<void> {
-  await runCommand(async configuration => {
+export async function create(
+  proxyRegion: string,
+  tunnelRegion: string,
+  bucket: string,
+  credentials?: StringCredentialsProviders
+): Promise<void> {
+  await runCommand(async (configuration) => {
     const request = {
       proxyRegion,
       tunnelRegion,
@@ -25,13 +30,16 @@ export async function create(proxyRegion: string, tunnelRegion: string, bucket: 
 }
 
 export async function destroy(credentials?: StringCredentialsProviders): Promise<void> {
-  await runCommand(async configuration => {
+  await runCommand(async (configuration) => {
     await configuration.tunnelProxyOperations.destroy();
     console.log("Successfully destroyed tunnel proxy infrastructures!");
   }, credentials);
 }
 
-async function runCommand(callback: (configuration: Configuration) => Promise<void>, credentials?: StringCredentialsProviders) {
+async function runCommand(
+  callback: (configuration: Configuration) => Promise<void>,
+  credentials?: StringCredentialsProviders
+) {
   const configuration = await loadConfiguration();
   if (credentials?.aws) {
     configuration.credentialsProviders.aws = parseCredentialsToken(credentials.aws);

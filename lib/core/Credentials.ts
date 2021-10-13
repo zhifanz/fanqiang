@@ -8,7 +8,7 @@ export type Credentials = { id: string; secret: string };
 export type CredentialsProviders = {
   aliyun?: Credentials;
   aws?: Credentials;
-}
+};
 process.env.ALIBABA_CLOUD_CREDENTIALS_FILE = path.join(os.homedir(), ".alibabacloud", "credentials");
 
 export function parseCredentialsToken(token: string): Credentials {
@@ -19,22 +19,24 @@ export function parseCredentialsToken(token: string): Credentials {
   return {
     id: token.substring(0, splitIndex),
     secret: token.substring(splitIndex + 1),
-  }
+  };
 }
 
 export async function getCredentialsProviders(): Promise<CredentialsProviders> {
   return {
     aliyun: await fromAliyunProviderChain(),
     aws: await fromAwsProviderChain(),
-  }
+  };
 }
 
 async function fromAliyunProviderChain(): Promise<Credentials | undefined> {
   const aliyunCredentials = new AliyunCredentials();
-  return aliyunCredentials.credential ? {
-    id: await aliyunCredentials.getAccessKeyId(),
-    secret: await aliyunCredentials.getAccessKeySecret()
-  } : undefined;
+  return aliyunCredentials.credential
+    ? {
+        id: await aliyunCredentials.getAccessKeyId(),
+        secret: await aliyunCredentials.getAccessKeySecret(),
+      }
+    : undefined;
 }
 
 async function fromAwsProviderChain(): Promise<Credentials | undefined> {

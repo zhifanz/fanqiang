@@ -1,8 +1,13 @@
 import child_process from "child_process";
 
-export function executeInherit(command: string, args: string[], cwd: string, customEnv: Record<string, string> = {}): Promise<void> {
+export function executeInherit(
+  command: string,
+  args: string[],
+  cwd: string,
+  customEnv: Record<string, string> = {}
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    const p = child_process.spawn(command, args, { cwd, stdio: "inherit", env: {...process.env, ...customEnv}});
+    const p = child_process.spawn(command, args, { cwd, stdio: "inherit", env: { ...process.env, ...customEnv } });
     p.on("close", (code) => {
       if (code === 0) {
         resolve();
