@@ -39,7 +39,11 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
   }
 
   async destroy(): Promise<void> {
-    const terraform = await Terraform.createInstance(TerraformConfigSource, {}, this.configuration.terraformWorkspace);
+    const terraform = await Terraform.createInstance(
+      TerraformConfigSource,
+      asEnvironmentVariables(this.configuration.credentialsProviders),
+      this.configuration.terraformWorkspace
+    );
     await terraform.destroy();
     console.log("Removing terraform working directory...");
     await fs.rm(this.configuration.terraformWorkspace, { force: true, recursive: true });
