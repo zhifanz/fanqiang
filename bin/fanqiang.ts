@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import yargs from "yargs";
-import handlers from "../index";
 import * as os from "os";
+import { handlers, DefaultRegions } from "../index";
 
 async function main(): Promise<void> {
   await yargs(process.argv.slice(2))
@@ -10,12 +10,12 @@ async function main(): Promise<void> {
     .options({
       region: {
         type: "string",
-        default: "us-east-1",
+        default: DefaultRegions.proxy,
         description: "AWS lightsail region for proxy deployment",
       },
       "tunnel-region": {
         type: "string",
-        default: "cn-shanghai",
+        default: DefaultRegions.tunnel,
         description: "Aliyun region for tunnel deployment",
       },
       bucket: {

@@ -1,5 +1,6 @@
 build
 .idea
+.run
 node_modules
 **/*.d.ts
 **/*.d.ts.map
@@ -11,6 +12,7 @@ node_modules
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfvars.json
 override.tf
 override.tf.json
 *_override.tf

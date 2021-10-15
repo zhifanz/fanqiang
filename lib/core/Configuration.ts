@@ -9,6 +9,11 @@ export const ProxyDefaults: Pick<ProxyOptions, "port" | "encryptionAlgorithm"> =
   encryptionAlgorithm: "aes-256-gcm",
 } as const;
 
+export const DefaultRegions = {
+  proxy: "us-east-1",
+  tunnel: "cn-shanghai",
+} as const;
+
 export interface Configuration {
   credentialsProviders: CredentialsProviders;
   terraformWorkspace: string;
