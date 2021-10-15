@@ -5,12 +5,16 @@ import path from "path";
 import child_process from "child_process";
 import * as os from "os";
 import { waitServiceAvailable } from "../../lib/core/netUtils";
+import { asEnvironmentVariables } from "../../lib/core/terraformUtils";
 
 export async function runTerraformTest(
   configSource: string,
   callback: (terraform: Terraform) => Promise<void>
 ): Promise<void> {
-  const terraform = await Terraform.createInstance(await getCredentialsProviders(), configSource);
+  const terraform = await Terraform.createInstance(
+    configSource,
+    asEnvironmentVariables(await getCredentialsProviders())
+  );
   try {
     await callback(terraform);
   } finally {

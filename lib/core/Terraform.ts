@@ -1,4 +1,3 @@
-import { CredentialsProviders } from "./Credentials";
 import * as fs from "fs-extra";
 import path from "path";
 import { execute, executeInherit } from "./process";
@@ -9,11 +8,11 @@ const StateFile = "terraform.tfstate";
 const VariableFile = "terraform.tfvars.json";
 
 export default class Terraform {
-  private constructor(private readonly credentialsProviders: CredentialsProviders, private readonly workdir: string) {}
+  private constructor(private readonly workdir: string, private readonly customEnv: NodeJS.ProcessEnv = {}) {}
 
   async apply<R extends ApplyResult>(variables: Record<string, TerraformVariableType>): Promise<R> {
     await fs.writeJSON(path.join(this.workdir, VariableFile), variables);
-    await executeInherit("terraform", ["apply", "-auto-approve"], this.workdir, this.credentialsAsEnv());
+    await executeInherit("terraform", ["apply", "-auto-approve"], this.workdir, this.customEnv);
     return <R>this.convert(JSON.parse(await execute("terraform", ["output", "-json"], this.workdir)));
   }
 
@@ -28,25 +27,16 @@ export default class Terraform {
       console.warn("Never provisioned, skip destroy");
       return;
     }
-    await executeInherit("terraform", ["destroy", "-auto-approve"], this.workdir, this.credentialsAsEnv());
+    await executeInherit("terraform", ["destroy", "-auto-approve"], this.workdir, this.customEnv);
   }
 
   provisioned(): Promise<boolean> {
     return fs.pathExists(path.join(this.workdir, StateFile));
   }
 
-  private credentialsAsEnv(): Record<string, string> {
-    return {
-      ALICLOUD_ACCESS_KEY: this.credentialsProviders.aliyun.id,
-      ALICLOUD_SECRET_KEY: this.credentialsProviders.aliyun.secret,
-      AWS_ACCESS_KEY_ID: this.credentialsProviders.aws.id,
-      AWS_SECRET_ACCESS_KEY: this.credentialsProviders.aws.secret,
-    };
-  }
-
   static async createInstance(
-    credentialsProviders: CredentialsProviders,
     configSource: string,
+    customEnv: NodeJS.ProcessEnv = {},
     workdir: string = configSource
   ): Promise<Terraform> {
     if (!(await fs.pathExists(path.join(workdir, ".terraform")))) {
@@ -57,6 +47,6 @@ export default class Terraform {
         workdir
       );
     }
-    return new Terraform(credentialsProviders, workdir);
+    return new Terraform(workdir, customEnv);
   }
 }

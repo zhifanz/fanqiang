@@ -9,16 +9,17 @@ import * as fs from "fs-extra";
 import { waitServiceAvailable } from "./netUtils";
 import path from "path";
 import Terraform from "./Terraform";
+import { asEnvironmentVariables } from "./terraformUtils";
 
-export const TerraformConfigSource = path.resolve(__dirname, "..", "..", "terraform");
+const TerraformConfigSource = path.resolve(__dirname, "..", "..", "terraform");
 
 export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
   constructor(private readonly configuration: Configuration) {}
 
   async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
     const terraform = await Terraform.createInstance(
-      this.configuration.credentialsProviders,
       TerraformConfigSource,
+      asEnvironmentVariables(this.configuration.credentialsProviders),
       this.configuration.terraformWorkspace
     );
 
@@ -38,11 +39,7 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
   }
 
   async destroy(): Promise<void> {
-    const terraform = await Terraform.createInstance(
-      this.configuration.credentialsProviders,
-      TerraformConfigSource,
-      this.configuration.terraformWorkspace
-    );
+    const terraform = await Terraform.createInstance(TerraformConfigSource, {}, this.configuration.terraformWorkspace);
     await terraform.destroy();
     console.log("Removing terraform working directory...");
     await fs.rm(this.configuration.terraformWorkspace, { force: true, recursive: true });
