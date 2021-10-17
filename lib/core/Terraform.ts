@@ -39,14 +39,11 @@ export default class Terraform {
     customEnv: NodeJS.ProcessEnv = {},
     workdir: string = configSource
   ): Promise<Terraform> {
-    if (!(await fs.pathExists(path.join(workdir, ".terraform")))) {
-      await fs.ensureDir(workdir);
-      await executeInherit(
-        "terraform",
-        workdir == configSource ? ["init"] : ["init", "-from-module=" + configSource],
-        workdir
-      );
+    await fs.ensureDir(workdir);
+    if (workdir != configSource) {
+      await fs.copy(configSource, workdir, { recursive: true, overwrite: true });
     }
+    await executeInherit("terraform", ["init"], workdir);
     return new Terraform(workdir, customEnv);
   }
 }
