@@ -1,3 +1,10 @@
+## [2.4.1](https://github.com/zhifanz/fanqiang/compare/v2.4.0...v2.4.1) (2021-10-17)
+
+
+### Bug Fixes
+
+* always execute terraform init when creating new instance ([e081b2d](https://github.com/zhifanz/fanqiang/commit/e081b2d64d724bfeac9cadfce72c9e7e1ce5b066))
+
 # [2.4.0](https://github.com/zhifanz/fanqiang/compare/v2.3.0...v2.4.0) (2021-10-08)
 
 
