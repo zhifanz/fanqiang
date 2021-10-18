@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/zhifanz/fanqiang/compare/v2.4.1...v2.5.0) (2021-10-18)
+
+
+### Features
+
+* user can attache public key to proxy and tunnel servers ([7e717a4](https://github.com/zhifanz/fanqiang/commit/7e717a4a0d2f00e3647fcd2e933a7de548d8179f))
+
 ## [2.4.1](https://github.com/zhifanz/fanqiang/compare/v2.4.0...v2.4.1) (2021-10-17)
 
 
