@@ -7,12 +7,12 @@ terraform {
   }
 }
 module "proxy" {
-  source = "../../../terraform/modules/proxy"
-  instance_name = "fanqiang-test"
-  password = "hello"
-  port = var.port
+  source               = "../../../terraform/modules/proxy"
+  instance_name        = "fanqiang-test"
+  password             = "hello"
+  port                 = var.port
   encryption_algorithm = var.encryption_algorithm
-  public_key = var.public_key
+  public_key           = var.public_key
 }
 provider "aws" {
   region = var.region

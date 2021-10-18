@@ -6,10 +6,12 @@ export interface TunnelProxyOperations {
   destroy(): Promise<void>;
 }
 
-export type TunnelProxyCreatingRequest = ProxyOptions & {
+export type TunnelProxyCreatingRequest = ProxyOptions & InfrastructureOptions;
+export type InfrastructureOptions = {
   proxyRegion: string;
   tunnelRegion: string;
   bucket: string;
+  publicKey?: string;
 };
 export type ProxyOptions = {
   port: number;

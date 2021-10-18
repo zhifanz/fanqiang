@@ -23,17 +23,18 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
       this.configuration.terraformWorkspace
     );
 
-    const applyResult: { address: string; bucket_domain_name: string } = await terraform.apply({
+    const applyResult: { tunnel_public_ip: string; bucket_domain_name: string } = await terraform.apply({
       proxy_region: request.proxyRegion,
       tunnel_region: request.tunnelRegion,
       port: request.port,
       password: request.password,
       encryption_algorithm: request.encryptionAlgorithm,
       bucket: request.bucket,
+      public_key: request.publicKey,
     });
-    await waitServiceAvailable(request.port, applyResult.address);
+    await waitServiceAvailable(request.port, applyResult.tunnel_public_ip);
     return {
-      address: applyResult.address,
+      address: applyResult.tunnel_public_ip,
       cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name),
     };
   }

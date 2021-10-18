@@ -31,6 +31,10 @@ async function main(): Promise<void> {
         type: "string",
         description: "Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>",
       },
+      "public-key": {
+        type: "string",
+        description: "ssh public key for login proxy or tunnel server",
+      },
     })
     .demandCommand(1)
     .strict()
@@ -39,10 +43,18 @@ async function main(): Promise<void> {
       "Create new tunnel proxy infrastructures",
       () => void 0,
       (args) =>
-        handlers.create(args.region, args["tunnel-region"], args["bucket"], {
-          aws: args["aws-credentials"],
-          aliyun: args["aliyun-credentials"],
-        })
+        handlers.create(
+          {
+            proxyRegion: args.region,
+            tunnelRegion: args["tunnel-region"],
+            bucket: args["bucket"],
+            publicKey: args["public-key"],
+          },
+          {
+            aws: args["aws-credentials"],
+            aliyun: args["aliyun-credentials"],
+          }
+        )
     )
     .command(
       "destroy",

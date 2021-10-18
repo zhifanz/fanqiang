@@ -24,12 +24,14 @@ module "proxy" {
   instance_name        = "fanqiang"
   password             = var.password
   port                 = var.port
+  public_key           = var.public_key
 }
 
 module "tunnel" {
   source          = "./modules/tunnel"
   proxy_port      = var.port
   proxy_public_ip = module.proxy.public_ip
+  public_key      = var.public_key
 }
 
 resource "aws_s3_bucket" "default" {

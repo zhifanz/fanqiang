@@ -2,22 +2,19 @@ import { Configuration, loadConfiguration, ProxyDefaults } from "./core/Configur
 import { randomBytes } from "crypto";
 import { generateConfigFrom } from "./domain/Clash";
 import { CredentialsProviders, parseCredentialsToken } from "./core/Credentials";
+import { InfrastructureOptions } from "./domain/TunnelProxyOperations";
 
 type StringCredentialsProviders = Record<keyof CredentialsProviders, string>;
 
 export async function create(
-  proxyRegion: string,
-  tunnelRegion: string,
-  bucket: string,
+  infrastructureOptions: InfrastructureOptions,
   credentials?: StringCredentialsProviders
 ): Promise<void> {
   await runCommand(async (configuration) => {
     const request = {
-      proxyRegion,
-      tunnelRegion,
+      ...infrastructureOptions,
       ...ProxyDefaults,
       password: randomBytes(20).toString("base64"),
-      bucket,
     };
     const result = await configuration.tunnelProxyOperations.create(request);
 

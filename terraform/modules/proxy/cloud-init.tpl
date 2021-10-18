@@ -16,7 +16,7 @@ appenders:
     path: /var/log/shadowsocks/ssserver.log
     encoder:
       kind: pattern
-      pattern: "{d} {h({l}):<5} {m}{n}"
+      pattern: "{l} {M} {m}{n}"
     policy:
       trigger:
         kind: size

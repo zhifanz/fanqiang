@@ -16,3 +16,7 @@ variable "encryption_algorithm" {
 variable "bucket" {
   type = string
 }
+variable "public_key" {
+  type    = string
+  default = null
+}
