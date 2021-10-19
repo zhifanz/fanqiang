@@ -7,11 +7,12 @@ This project creates a command line tool that helps to automatically deploy a sh
 - Has **Nodejs** installed on local machine. See [download link][1] for more details.
 - Has **Terraform** installed on local machine. See [Install Terraform][5] for more details.
 - Has an AWS access token. See [manage AWS access token][2] for more details.
-- Has an Aliyun access token if you want to use tunnel feature.
+- Has an Aliyun access token. See [Aliyun Account][6] for more details
 
 [1]: https://nodejs.org/en/
 [2]: https://console.aws.amazon.com/iam/home#security_credential
 [5]: https://learn.hashicorp.com/tutorials/terraform/install-cli?in=terraform/aws-get-started
+[6]: https://account.aliyun.com
 
 ## Installation
 
@@ -39,6 +40,8 @@ Options:
                                                                                    [string]
   --aliyun-credentials  Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>
                                                                                    [string]
+  --public-key          SSH public key for login proxy or tunnel server      
+                                                                                   [string]                                                                                 
   --help                Show help                                                 [boolean]
   --version             Show version number                                       [boolean]
 ```
