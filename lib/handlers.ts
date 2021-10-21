@@ -18,9 +18,10 @@ export async function create(
     };
     const result = await configuration.tunnelProxyOperations.create(request);
 
+    const ruleUrl = await result.cloudStorage.save("clash/domain_rules.yaml", "payload: []");
     const clashConfigUrl = await result.cloudStorage.save(
       "clash/config.yaml",
-      generateConfigFrom({ ...request, address: result.address })
+      generateConfigFrom({ ...request, address: result.address }, ruleUrl)
     );
     console.log("Saved Clash config to: " + clashConfigUrl);
   }, credentials);

@@ -14,9 +14,13 @@ resource "aws_lightsail_instance" "default" {
   name              = var.instance_name
   key_pair_name     = var.public_key != null ? aws_lightsail_key_pair.default[0].id : null
   user_data = templatefile("${path.module}/cloud-init.tpl", {
-    port                 = var.port,
-    encryption_algorithm = var.encryption_algorithm,
+    port                 = var.port
+    encryption_algorithm = var.encryption_algorithm
     password             = var.password
+    analysis_queue_name = var.analysis.queue_name
+    analysis_bundle_url = var.analysis.bundle_url
+    analysis_aws_access_key_id = var.analysis.aws_access_key_id
+    analysis_aws_secret_access_key = var.analysis.aws_secret_access_key
   })
 }
 

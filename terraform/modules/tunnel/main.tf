@@ -63,9 +63,16 @@ resource "alicloud_ecs_launch_template" "default" {
   spot_strategy        = "SpotAsPriceGo"
   ram_role_name        = alicloud_ram_role.default.id
   user_data = base64encode(templatefile("${path.module}/cloud-init.tpl", {
-    proxy_port               = var.proxy_port,
-    proxy_address            = var.proxy_public_ip,
-    elastic_ip_allocation_id = alicloud_eip_address.default.id,
+    proxy_port               = var.proxy_port
+    proxy_address            = var.proxy_public_ip
+    elastic_ip_allocation_id = alicloud_eip_address.default.id
+    analysis_queue_name = var.analysis.queue_name
+    analysis_queue_region = var.analysis.queue_region
+    analysis_bundle_url = var.analysis.bundle_url
+    analysis_aws_access_key_id = var.analysis.aws_access_key_id
+    analysis_aws_secret_access_key = var.analysis.aws_secret_access_key
+    s3_bucket = var.analysis.s3_bucket
+    s3_rules_key = var.analysis.s3_rules_key
   }))
   system_disk {
     category             = "cloud_efficiency"

@@ -1,7 +1,7 @@
 import {
   TunnelProxyCreatingRequest,
   TunnelProxyCreatingResult,
-  TunnelProxyOperations,
+  TunnelProxyOperations
 } from "../domain/TunnelProxyOperations";
 import { Configuration } from "./Configuration";
 import { AwsS3CloudStorage } from "./AwsS3CloudStorage";
@@ -10,13 +10,19 @@ import { waitServiceAvailable } from "./netUtils";
 import path from "path";
 import Terraform from "./Terraform";
 import { asEnvironmentVariables } from "./terraformUtils";
+import { createBundle } from "./analysis";
 
 const TerraformConfigSource = path.resolve(__dirname, "..", "..", "terraform");
 
 export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
-  constructor(private readonly configuration: Configuration) {}
+  constructor(private readonly configuration: Configuration) {
+  }
 
   async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
+    await fs.ensureDir(this.configuration.terraformWorkspace);
+    const analysisBundlePath = path.join(this.configuration.terraformWorkspace, "analysis.tar.gz");
+    await createBundle(analysisBundlePath);
+
     const terraform = await Terraform.createInstance(
       TerraformConfigSource,
       asEnvironmentVariables(this.configuration.credentialsProviders),
@@ -31,11 +37,16 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
       encryption_algorithm: request.encryptionAlgorithm,
       bucket: request.bucket,
       public_key: request.publicKey,
+      analysis: {
+        queue_name: "fanqiang",
+        bundle_path: analysisBundlePath,
+        s3_rules_key: "clash/domain_rules.yaml"
+      }
     });
     await waitServiceAvailable(request.port, applyResult.tunnel_public_ip);
     return {
       address: applyResult.tunnel_public_ip,
-      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name),
+      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name)
     };
   }
 

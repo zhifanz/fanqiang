@@ -20,3 +20,10 @@ variable "public_key" {
   type    = string
   default = null
 }
+variable "analysis" {
+  type = object({
+    queue_name = string
+    bundle_path = string
+    s3_rules_key = string
+  })
+}

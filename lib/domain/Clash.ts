@@ -5,7 +5,7 @@ export type TunnelProxyConnectionInfo = ProxyOptions & {
   address: string;
 };
 
-export function generateConfigFrom(endpoints: TunnelProxyConnectionInfo): string {
+export function generateConfigFrom(endpoints: TunnelProxyConnectionInfo, ruleUrl: string): string {
   return yaml.stringify({
     port: 7890,
     "socks-port": 7891,
@@ -29,6 +29,14 @@ export function generateConfigFrom(endpoints: TunnelProxyConnectionInfo): string
         password: endpoints.password,
       },
     ],
-    rules: ["DOMAIN-SUFFIX,google.com,auto", "DOMAIN,ad.com,REJECT", "GEOIP,CN,DIRECT", "MATCH,auto"],
+    "rule-providers": {
+      domestic: {
+        type: "http",
+        behavior: "domain",
+        path: "./direct_domains.yaml",
+        url: ruleUrl
+      }
+    },
+    rules: ["RULE-SET,domestic,DIRECT", "DOMAIN-SUFFIX,google.com,auto", "DOMAIN,ad.com,REJECT", "GEOIP,CN,DIRECT", "MATCH,auto"],
   });
 }

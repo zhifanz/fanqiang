@@ -40,8 +40,8 @@ Options:
                                                                                    [string]
   --aliyun-credentials  Must be in format: <ACCESS_KEY_ID>:<ACCESS_KEY_SECRET>
                                                                                    [string]
-  --public-key          SSH public key for login proxy or tunnel server      
-                                                                                   [string]                                                                                 
+  --public-key          SSH public key for login proxy or tunnel server
+                                                                                   [string]
   --help                Show help                                                 [boolean]
   --version             Show version number                                       [boolean]
 ```

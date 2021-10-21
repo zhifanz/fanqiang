@@ -2,7 +2,7 @@ import * as fs from "fs-extra";
 import path from "path";
 import { execute, executeInherit } from "./process";
 
-export type TerraformVariableType = string | number | boolean;
+export type TerraformVariableType = string | number | boolean | Record<string, string | number | boolean>;
 type ApplyResult = Record<string, TerraformVariableType>;
 const StateFile = "terraform.tfstate";
 const VariableFile = "terraform.tfvars.json";
@@ -39,7 +39,6 @@ export default class Terraform {
     customEnv: NodeJS.ProcessEnv = {},
     workdir: string = configSource
   ): Promise<Terraform> {
-    await fs.ensureDir(workdir);
     if (workdir != configSource) {
       await fs.copy(configSource, workdir, { recursive: true, overwrite: true });
     }
