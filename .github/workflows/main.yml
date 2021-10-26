@@ -20,6 +20,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "14.x"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
       - run: ssh-keygen -C fanqiang_test -f ~/.ssh/id_ed25519 -N '' -t ed25519
       - run: npm ci
       - run: npm test
