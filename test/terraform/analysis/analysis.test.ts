@@ -24,12 +24,12 @@ describe("analysis", () => {
         AWS_SECRET_ACCESS_KEY: <string>applyResult.aws_secret_access_key
       };
       child_process.execSync(
-        `./analysis/collector.py --region=${region} --queue=fanqiang-test`,
+        `python3 ./analysis/collector.py --region=${region} --queue=fanqiang-test`,
         { input: SampleLog, env, encoding: "utf8", stdio: [undefined, "inherit", "inherit"] });
 
       try {
         child_process.execSync(
-          `./analysis/analyzer.py --region=${region} --queue=fanqiang-test fanqiang-test clash/domain_rules.yaml`,
+          `python3 ./analysis/analyzer.py --region=${region} --queue=fanqiang-test fanqiang-test clash/domain_rules.yaml`,
           { timeout: 60 * 1000, env, stdio: "inherit" });
       } catch (e) {
         if (e.code !== "ETIMEDOUT") {
