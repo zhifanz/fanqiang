@@ -24,6 +24,8 @@ jobs:
         with:
           python-version: '3.x'
       - run: ssh-keygen -C fanqiang_test -f ~/.ssh/id_ed25519 -N '' -t ed25519
+      - name: install python packages
+        run: pip3 install -r analysis/requirements.txt
       - run: npm ci
       - run: npm test
         env:
