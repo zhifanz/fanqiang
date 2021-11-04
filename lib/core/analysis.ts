@@ -1,12 +1,8 @@
-import * as tar from "tar";
 import path from "path";
+import AdmZip from "adm-zip";
 
-export async function createBundle(bundlePath: string): Promise<void> {
-  await tar.create({
-    file: path.join(bundlePath),
-    gzip: true,
-    cwd: path.join(__dirname, "..", "..", "analysis"),
-    filter: p => !p.endsWith("tests.py")
-  }, ["."]);
-
+export function createBundle(bundlePath: string): void {
+  const zipper = new AdmZip();
+  zipper.addLocalFile(path.join(__dirname, "..", "..", "analysis", "index.py"));
+  zipper.writeZip(bundlePath);
 }

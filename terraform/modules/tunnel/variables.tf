@@ -28,3 +28,11 @@ variable "analysis" {
     s3_rules_key = ""
   }
 }
+variable "ram_role_name" {
+  type = string
+  default = "FangqiangEcsEipAccessRole"
+}
+variable "launch_template_name" {
+  type = string
+  default = "fanqiang"
+}

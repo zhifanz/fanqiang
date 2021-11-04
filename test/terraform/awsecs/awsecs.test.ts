@@ -1,6 +1,6 @@
 import { runTerraformTest } from "../cloudInitTestHelper";
 import { DefaultRegions, ProxyDefaults } from "../../../lib/core/Configuration";
-import { waitServiceAvailable } from "../../../lib/core/netUtils";
+import assert = require("assert");
 
 describe("awsecs", () => {
   it("terraform", async () => {
@@ -9,7 +9,7 @@ describe("awsecs", () => {
         region: DefaultRegions.proxy,
         port: ProxyDefaults.port
       });
-      await waitServiceAvailable(ProxyDefaults.port, <string>applyResult.public_ip);
+      assert(applyResult.subnet_id);
     })
   })
 })

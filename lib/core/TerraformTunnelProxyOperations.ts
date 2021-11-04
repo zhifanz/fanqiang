@@ -20,7 +20,7 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
 
   async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
     await fs.ensureDir(this.configuration.terraformWorkspace);
-    const analysisBundlePath = path.join(this.configuration.terraformWorkspace, "analysis.tar.gz");
+    const analysisBundlePath = path.join(this.configuration.terraformWorkspace, "index.zip");
     await createBundle(analysisBundlePath);
 
     const terraform = await Terraform.createInstance(

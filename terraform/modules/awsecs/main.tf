@@ -4,10 +4,6 @@ terraform {
       source  = "hashicorp/aws"
       version = "3.60.0"
     }
-    time = {
-      source = "hashicorp/time"
-      version = "0.7.2"
-    }
   }
 }
 
@@ -42,11 +38,10 @@ resource "aws_security_group_rule" "default" {
 
 
 resource "aws_ecs_cluster" "default" {
-  name = var.name
+  name = var.service_name
 }
-
 resource "aws_ecs_service" "default" {
-  name = var.name
+  name = var.service_name
   cluster = aws_ecs_cluster.default.arn
   desired_count = 1
   launch_type = "FARGATE"
@@ -56,47 +51,63 @@ resource "aws_ecs_service" "default" {
     assign_public_ip = true
   }
 }
-
 resource "aws_ecs_task_definition" "default" {
   container_definitions = jsonencode([
     {
-      name = "ssserver"
+      name = "shadowsocks-server-rust"
       image = "zhifanz/ssserver-rust:1.0.0"
       command = ["-s", "[::]:${var.port}", "-m", var.encryption_algorithm, "-k", var.password, "--log-without-time", "-v"]
       portMappings = [{
         containerPort = var.port
       }]
       logConfiguration = {
-        logDriver = "awsfirelens"
+        logDriver = "awslogs"
         options = {
-          Name = "stdout"
+          awslogs-group = aws_cloudwatch_log_group.default.name
+          awslogs-region = data.aws_region.default.name
+          awslogs-stream-prefix = aws_ecs_service.default.name
         }
-      }
-    },
-    {
-      name = "log_router"
-      image = "public.ecr.aws/aws-observability/aws-for-fluent-bit:stable"
-      firelensConfiguration = {
-        type = "fluentbit"
       }
     }
   ])
-  family = var.name
+  execution_role_arn = aws_iam_role.default.arn
+  family = "shadowsocks-server-rust"
   cpu = "256"
   memory = "512"
   network_mode = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 }
-
-resource "time_sleep" "wait" {
-  depends_on = [aws_ecs_service.default]
-  create_duration = "15s"
+resource "aws_iam_role" "default" {
+  name_prefix = "ecsTaskExecutionRole"
+  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"]
+  force_detach_policies = true
+  assume_role_policy = jsonencode({
+    Version = "2008-10-17"
+    Statement= [
+      {
+        Sid = ""
+        Effect = "Allow"
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
 }
 
-data "aws_network_interface" "default" {
-  filter {
-    name = "subnet-id"
-    values = [aws_subnet.default.id]
-  }
-  depends_on = [time_sleep.wait]
+resource "aws_cloudwatch_log_group" "default" {
+  name = var.service_name
+  retention_in_days = 1
 }
+
+resource "aws_cloudwatch_log_subscription_filter" "default" {
+  count = var.log_subscription != null ? 1 : 0
+  name = var.log_subscription.name
+  destination_arn = var.log_subscription.destination
+  filter_pattern = var.log_subscription.filter_pattern
+  log_group_name = aws_cloudwatch_log_group.default.name
+}
+
+data "aws_region" "default" {}
+

@@ -53,7 +53,7 @@ resource "alicloud_auto_provisioning_group" "default" {
 }
 
 resource "alicloud_ecs_launch_template" "default" {
-  launch_template_name = "fanqiang"
+  launch_template_name = var.launch_template_name
   image_id             = local.image_id
   instance_charge_type = "PostPaid"
   instance_type        = local.instance_type
@@ -87,7 +87,7 @@ resource "alicloud_ecs_key_pair" "default" {
 }
 
 resource "alicloud_ram_role" "default" {
-  name     = "FangqiangEcsEipAccessRole"
+  name     = var.ram_role_name
   document = <<EOF
   {
     "Statement": [

@@ -1,37 +1,31 @@
 terraform {
   required_providers {
-    aws = {
-      source = "hashicorp/aws"
-      version = "3.60.0"
+    alicloud = {
+      source  = "aliyun/alicloud"
+      version = "1.134.0"
     }
   }
 }
 
-provider "aws" {
-  region = var.region
-}
 module "analysis" {
   source = "../../../terraform/modules/analysis"
-  queue_name = var.queue_name
+  aliyun_fc_name = "pingtest"
+  aliyun_fc = {
+    lib_path = var.lib_path
+    handler = "index.handler"
+    require_authentication = false
+  }
 }
-resource "aws_s3_bucket" "default" {
-  bucket        = var.bucket
-  acl           = "public-read"
-  force_destroy = true
-}
-variable "bucket" {
-  type = string
+
+provider "alicloud" {
+  region = var.region
 }
 variable "region" {
   type = string
 }
-variable "queue_name" {
+variable "lib_path" {
   type = string
 }
-output "aws_access_key_id" {
-  value = module.analysis.aws_access_key_id
-}
-output "aws_secret_access_key" {
-  value = module.analysis.aws_secret_access_key
-  sensitive = true
+output "fc_endpoint" {
+  value = module.analysis.fc_endpoint
 }
