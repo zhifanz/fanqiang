@@ -101,13 +101,6 @@ resource "aws_cloudwatch_log_group" "default" {
   retention_in_days = 1
 }
 
-resource "aws_cloudwatch_log_subscription_filter" "default" {
-  count = var.log_subscription != null ? 1 : 0
-  name = var.log_subscription.name
-  destination_arn = var.log_subscription.destination
-  filter_pattern = var.log_subscription.filter_pattern
-  log_group_name = aws_cloudwatch_log_group.default.name
-}
 
 data "aws_region" "default" {}
 

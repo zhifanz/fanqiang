@@ -19,3 +19,10 @@ variable "aws_lambda" {
     handler = string
   })
 }
+variable "log_group" {
+  type = object({
+    name = string
+    arn = string
+    region = string
+  })
+}

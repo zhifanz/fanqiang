@@ -1,12 +1,11 @@
 import logging
-import tempfile
 import unittest
 
 import yaml
 
 from analyzer import domain_available
-from collector import substring_between
 from common import default_argparser
+from process_shadowsocks_logs import substring_between
 
 
 class TestMain(unittest.TestCase):
@@ -35,6 +34,7 @@ class TestMain(unittest.TestCase):
     def test_yaml_dump_array(self):
         output = yaml.dump({'payload': ['d1', 'd2']})
         self.assertEqual(output, 'payload:\n- d1\n- d2\n')
+
 
 if __name__ == '__main__':
     unittest.main()
