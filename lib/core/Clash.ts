@@ -1,5 +1,5 @@
 import yaml from "yaml";
-import { ProxyOptions } from "./TunnelProxyOperations";
+import { ProxyOptions } from "../domain/TunnelProxyOperations";
 
 export type TunnelProxyConnectionInfo = ProxyOptions & {
   address: string;
@@ -34,9 +34,15 @@ export function generateConfigFrom(endpoints: TunnelProxyConnectionInfo, ruleUrl
         type: "http",
         behavior: "domain",
         path: "./direct_domains.yaml",
-        url: ruleUrl
-      }
+        url: ruleUrl,
+      },
     },
-    rules: ["RULE-SET,domestic,DIRECT", "DOMAIN-SUFFIX,google.com,auto", "DOMAIN,ad.com,REJECT", "GEOIP,CN,DIRECT", "MATCH,auto"],
+    rules: [
+      "RULE-SET,domestic,DIRECT",
+      "DOMAIN-SUFFIX,google.com,auto",
+      "DOMAIN,ad.com,REJECT",
+      "GEOIP,CN,DIRECT",
+      "MATCH,auto",
+    ],
   });
 }

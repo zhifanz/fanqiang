@@ -1,6 +1,6 @@
 import { Configuration, loadConfiguration, ProxyDefaults } from "./core/Configuration";
 import { randomBytes } from "crypto";
-import { generateConfigFrom } from "./domain/Clash";
+
 import { CredentialsProviders, parseCredentialsToken } from "./core/Credentials";
 import { InfrastructureOptions } from "./domain/TunnelProxyOperations";
 
@@ -16,13 +16,7 @@ export async function create(
       ...ProxyDefaults,
       password: randomBytes(20).toString("base64"),
     };
-    const result = await configuration.tunnelProxyOperations.create(request);
-
-    const ruleUrl = await result.cloudStorage.save("clash/domain_rules.yaml", "payload: []");
-    const clashConfigUrl = await result.cloudStorage.save(
-      "clash/config.yaml",
-      generateConfigFrom({ ...request, address: result.address }, ruleUrl)
-    );
+    const clashConfigUrl = await configuration.tunnelProxyOperations.create(request);
     console.log("Saved Clash config to: " + clashConfigUrl);
   }, credentials);
 }

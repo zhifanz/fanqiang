@@ -1,7 +1,6 @@
-import { CloudStorage } from "./CloudStorage";
-
+export type ClashConfigUrl = string;
 export interface TunnelProxyOperations {
-  create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult>;
+  create(request: TunnelProxyCreatingRequest): Promise<ClashConfigUrl>;
 
   destroy(): Promise<void>;
 }
@@ -18,5 +17,3 @@ export type ProxyOptions = {
   encryptionAlgorithm: string;
   password: string;
 };
-
-export type TunnelProxyCreatingResult = { address: string; cloudStorage: CloudStorage };

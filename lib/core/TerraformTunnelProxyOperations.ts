@@ -1,8 +1,4 @@
-import {
-  TunnelProxyCreatingRequest,
-  TunnelProxyCreatingResult,
-  TunnelProxyOperations
-} from "../domain/TunnelProxyOperations";
+import { ClashConfigUrl, TunnelProxyCreatingRequest, TunnelProxyOperations } from "../domain/TunnelProxyOperations";
 import { Configuration } from "./Configuration";
 import { AwsS3CloudStorage } from "./AwsS3CloudStorage";
 import * as fs from "fs-extra";
@@ -11,14 +7,14 @@ import path from "path";
 import Terraform from "./Terraform";
 import { asEnvironmentVariables } from "./terraformUtils";
 import { createBundle } from "./analysis";
+import { generateConfigFrom } from "./Clash";
 
 const TerraformConfigSource = path.resolve(__dirname, "..", "..", "terraform");
 
 export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
-  constructor(private readonly configuration: Configuration) {
-  }
+  constructor(private readonly configuration: Configuration) {}
 
-  async create(request: TunnelProxyCreatingRequest): Promise<TunnelProxyCreatingResult> {
+  async create(request: TunnelProxyCreatingRequest): Promise<ClashConfigUrl> {
     await fs.ensureDir(this.configuration.terraformWorkspace);
     const analysisBundlePath = path.join(this.configuration.terraformWorkspace, "analysis.tar.gz");
     await createBundle(analysisBundlePath);
@@ -40,14 +36,19 @@ export class TerraformTunnelProxyOperations implements TunnelProxyOperations {
       analysis: {
         queue_name: "fanqiang",
         bundle_path: analysisBundlePath,
-        s3_rules_key: "clash/domain_rules.yaml"
-      }
+        s3_rules_key: "clash/domain_rules.yaml",
+      },
     });
     await waitServiceAvailable(request.port, applyResult.tunnel_public_ip);
-    return {
+    const result = {
       address: applyResult.tunnel_public_ip,
-      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name)
+      cloudStorage: new AwsS3CloudStorage(request.proxyRegion, request.bucket, applyResult.bucket_domain_name),
     };
+    const ruleUrl = await result.cloudStorage.save("clash/domain_rules.yaml", "payload: []");
+    return result.cloudStorage.save(
+      "clash/config.yaml",
+      generateConfigFrom({ ...request, address: result.address }, ruleUrl)
+    );
   }
 
   async destroy(): Promise<void> {
