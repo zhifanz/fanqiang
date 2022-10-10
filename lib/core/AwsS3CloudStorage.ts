@@ -1,5 +1,5 @@
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { CloudStorage } from "../domain/CloudStorage";
+import { CloudStorage } from "./CloudStorage";
 
 export class AwsS3CloudStorage implements CloudStorage {
   constructor(private readonly region: string, private readonly bucket: string, private readonly domain: string) {}
