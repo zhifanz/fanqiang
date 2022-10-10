@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/zhifanz/fanqiang/compare/v2.5.0...v2.6.0) (2022-10-10)
+
+
+### Features
+
+* add domestic domains to direct rule if not captured by geoip ([13f06cb](https://github.com/zhifanz/fanqiang/commit/13f06cb24beac9a4af5b128446c681d14ac8d5d1))
+
 # [2.5.0](https://github.com/zhifanz/fanqiang/compare/v2.4.1...v2.5.0) (2021-10-18)
 
 
